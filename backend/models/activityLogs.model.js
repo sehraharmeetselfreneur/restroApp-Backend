@@ -10,7 +10,7 @@ const activityLogsSchema = new mongoose.Schema({
     userType: {
         type: String,
         required: true,
-        enum: ["Customers", "Restaurants"]
+        enum: ["Customer", "Restaurant"]
     },
 
     action: {

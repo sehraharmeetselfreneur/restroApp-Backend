@@ -9,20 +9,37 @@ if(!fs.existsSync(supportDir)){
 }
 
 export const createBackup = (entityType, entityName, fileName, data) => {
-    try{
+    try {
         const safeEntityName = `${entityType}_${entityName}`.replace(/\s+/g, "_").toLowerCase();
         const entityDir = path.join(supportDir, safeEntityName);
 
-        if(!fs.existsSync(entityDir)){
+        if (!fs.existsSync(entityDir)) {
             fs.mkdirSync(entityDir, { recursive: true });
         }
 
         const filePath = path.join(entityDir, `${fileName}.json`);
+        let existingData = [];
 
-        fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
-        console.log(`Backup created: ${filePath}`);
+        if (fs.existsSync(filePath)) {
+            const fileContent = fs.readFileSync(filePath, "utf-8");
+            try {
+                existingData = JSON.parse(fileContent);
+                if (!Array.isArray(existingData)) {
+                    existingData = [existingData]; // if old data was not array
+                }
+            } catch {
+                existingData = []; // reset if corrupted
+            }
+        }
+
+        existingData.push(data);    // Ensure new data is added as entry
+        fs.writeFileSync(filePath, JSON.stringify(existingData, null, 2), "utf-8");
+
+        console.log(`Backup appended: ${filePath}`);
+    } catch (err) {
+        console.log(
+            `Backup failed for ${entityType} ${entityName} - ${fileName}: `,
+            err.message
+        );
     }
-    catch(err){
-        console.log(`Backup failed for ${entityType} ${entityName} - ${fileName}: `, err.message);
-    }
-}
+};

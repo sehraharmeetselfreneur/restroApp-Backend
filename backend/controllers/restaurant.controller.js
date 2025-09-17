@@ -1,6 +1,8 @@
 //Models used
+import activityLogModel from "../models/activityLogs.model.js";
 import restaurantModel from "../models/restaurant.model.js";
 import restaurantBankDetailsModel from "../models/restaurant_bank_details.model.js";
+import restaurantAnalyticsModel from "../models/restaurantAnalytics.model.js";
 
 // Services used
 import { createBackup } from "../services/backup.service.js";
@@ -70,6 +72,7 @@ export const registerRestaurantController = async (req, res) => {
             images: images
         });
 
+        //RestaurantBankDetails document creation
         const newRestaurantBankDetails = await restaurantBankDetailsModel.create({
             restaurant_id: newRestaurant._id,
             accountHolderName: accountHolderName,
@@ -79,6 +82,41 @@ export const registerRestaurantController = async (req, res) => {
             upi_id: upi_id ? encrypt(upi_id) : null,
         });
 
+        //RestaurantAnalytics document creation
+        const newRestaurantAnalytics = await restaurantAnalyticsModel.create({ restaurantId: newRestaurant._id });
+
+        //JWT token
+        const token = newRestaurant.generateAuthToken();
+        res.cookie("jwt", token, {
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.MODE === "production",
+            maxAge: 24 * 60 * 60 * 1000
+        });
+
+        //ActivityLog document creation
+        const newActivityLog = await activityLogModel.create({
+            userId: newRestaurant._id,
+            userType: "Restaurant",
+            action: "login",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Restaurant ${newRestaurant.restaurantName} registered and logged in`
+            }
+        });
+
+        //ActivityLogs backup
+        const activityBackup = {
+            id: newActivityLog._id,
+            userId: newActivityLog.userId,
+            userType: newActivityLog.userType,
+            action: newActivityLog.action,
+            metadata: newActivityLog.metadata,
+            createdAt: newActivityLog.createdAt,
+        };
+
+        //New Restaurant backup
         const backupData = {
             restaurant: {
                 id: newRestaurant._id,
@@ -102,12 +140,15 @@ export const registerRestaurantController = async (req, res) => {
                 IFSC: newRestaurantBankDetails.IFSC
             }
         };
-
-        createBackup("restaurant", restaurantName, "registration.json", backupData);
+        
+        createBackup("restaurant", newRestaurant.restaurantName, "restaurant", backupData);    //Backup for restaurantModel
+        createBackup("restaurant", newRestaurant.restaurantName, "restaurantAnalytics", newRestaurantAnalytics.toObject());   //Backup for restaurantAnalytics
+        createBackup("restaurant", newRestaurant.restaurantName, "activityLogs", activityBackup);    //Backup for activityLogsModel
 
         res.status(201).json({
             success: true,
             message: `Restaurant - ${newRestaurant.restaurantName} registered successfully`,
+            token: token,
             restaurant: {
                 id: newRestaurant._id,
                 name: newRestaurant.restaurantName,
@@ -116,7 +157,15 @@ export const registerRestaurantController = async (req, res) => {
                 address: newRestaurant.address,
                 documents: newRestaurant.documents,
                 images: newRestaurant.images,
-            }
+            },
+            restaurantBankDetails: {
+                accountHolderName: newRestaurantBankDetails.accountHolderName,
+                bankName: newRestaurantBankDetails.bankName,
+                upi_id: newRestaurantBankDetails.upi_id,
+                accountNumber: newRestaurantBankDetails.accountNumber,
+                IFSC: newRestaurantBankDetails.IFSC
+            },
+            restaurantAnalytics: newRestaurantAnalytics
         });
     }
     catch(err){
