@@ -1,20 +1,23 @@
 import express from 'express';
-import { authMiddleware } from '../middlewares/auth.middleware';
-import { roleMiddleware } from '../middlewares/role.middleware';
-import { upload } from '../middlewares/file.middleware';
+
+//Middlewares
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { roleMiddleware } from '../middlewares/role.middleware.js';
+import { upload } from '../middlewares/file.middleware.js';
+
+//Controllers
+import { loginRestaurantController, registerRestaurantController } from '../controllers/restaurant.controller.js';
+import { generateOtpController, verifyOtpController } from '../controllers/otp.controller.js';
 
 const router = express.Router();
 
 //Auth routes
 router.post('/signup', upload.fields([
-    { name: "fssaiLicense", maxCount: 1 },
-    { name: "gstCertificate", maxCount: 1 },
-    { name: "panCard", maxCount: 1 },
-    { name: "images", maxCount: 5 }
-]));
-router.post('/login');
-router.post('/verify-otp');
-router.post('/resend-otp');
+    { name: "fssaiLicense", maxCount: 1 }, { name: "gstCertificate", maxCount: 1 },
+    { name: "panCard", maxCount: 1 }, { name: "images", maxCount: 5 }]), registerRestaurantController);
+router.post('/login', loginRestaurantController);
+router.post('/generate-otp', generateOtpController);
+router.post('/verify-otp', verifyOtpController);
 
 //Profile routes
 router.get('/profile', authMiddleware, roleMiddleware(["Restaurant"]));

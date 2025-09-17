@@ -173,3 +173,74 @@ export const registerRestaurantController = async (req, res) => {
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }
+
+export const loginRestaurantController = async (req, res) => {
+    try{
+        const { email, password } = req.body;
+        if(!email || !password){
+            return res.status(400).json({ success: false, message: "Email and password is required" });
+        }
+
+        const existingRestaurant = await restaurantModel.findOne({ email: email });
+        if(!existingRestaurant){
+            return res.status(404).json({ success: false, message: "Restaurant not found" });
+        }
+
+        const isPasswordCorrect = await existingRestaurant.comparePassword(password);
+        if(!isPasswordCorrect){
+            return res.status(400).json({ success: false, message: "Email or password is incorrect" });
+        }
+
+        //JWT token creation
+        const token = existingRestaurant.generateAuthToken();
+        res.cookie("jwt", token, {
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.MODE === "production",
+            maxAge: 24 * 60 * 60 * 1000
+        });
+
+        //activityLog document creation
+        const newActivityLog = await activityLogModel.create({
+            userId: existingRestaurant._id,
+            userType: "Restaurant",
+            action: "login",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Restaurant ${existingRestaurant.restaurantName} logged in with email, password and OTP`
+            }
+        });
+
+        //activityLog backup
+        const activityBackup = {
+            id: newActivityLog._id,
+            userId: newActivityLog.userId,
+            userType: newActivityLog.userType,
+            action: newActivityLog.action,
+            metadata: newActivityLog.metadata,
+            createdAt: newActivityLog.createdAt,
+        };
+
+        createBackup("restaurant", existingRestaurant.restaurantName, "activityLogs", activityBackup);  //Backup for activityLogs Model
+
+        res.status(200).json({
+            success: true,
+            message: `Restaurant - ${existingRestaurant.restaurantName} logged in successfully`,
+            token,
+            restaurant: {
+              id: existingRestaurant._id,
+              name: existingRestaurant.restaurantName,
+              email: existingRestaurant.email,
+              phone: existingRestaurant.phone,
+              address: existingRestaurant.address,
+              documents: existingRestaurant.documents,
+              images: existingRestaurant.images,
+            }
+        })
+    }
+    catch(err){
+        console.log("Error in loginRestaurantController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
