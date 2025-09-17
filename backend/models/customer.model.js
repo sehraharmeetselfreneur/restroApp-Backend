@@ -58,7 +58,7 @@ const paymentMethodSchema = new mongoose.Schema({
 })
 
 const customerSchema = new mongoose.Schema({
-    fullName: {
+    customerName: {
         type: String,
         required: true,
         trim: true

@@ -1,23 +1,38 @@
 import multer from "multer"
+import fs from 'fs';
+import path from "path";
+
+const rootDir = path.join(process.cwd(), "KYC");
+
+if(!fs.existsSync(rootDir)){
+    fs.mkdirSync(rootDir, { recursive: true });
+}
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/")
+        try{
+            const restaurantName = req.body.restaurantName || "Unknown_restaurant";
+
+            let folderType = "images";
+            if(file.fieldname === "docs" || file.mimetype.includes("pdf")){
+                folderType = "docs";
+            }
+
+            const uploadPath = path.join(rootDir, restaurantName, folderType);
+
+            fs.mkdirSync(uploadPath, { recursive: true });
+
+            cb(null, uploadPath);
+        }
+        catch(err){
+            cb(err);
+        }
     },
-    
+
     filename: (req, file, cb) => {
-        cb(null, Date.now() + "-" + file.originalname)
+        const uniqueName = `${Date.now()}-${file.originalname}`;
+        cb(null, uniqueName);
     }
 });
 
-const fileFilter = (req, file, cb) => {
-    const allowedTypes = ["image/jpeg", "image/png", "application/pdf"];
-    if(allowedTypes.includes(file.mimetype)){
-        cb(null, true);
-    }
-    else{
-        cb(new Error("Invalid file type. Only JPEG, PNG, and PDF allowed."), false);
-    }
-};
-
-export const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
+export const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });

@@ -30,13 +30,13 @@ const addressSchema = new mongoose.Schema({
 });
 
 const documentSchema = new mongoose.Schema({
-    foodLicense: { type: String },
+    fssaiLicense: { type: String },
     gstCertificate: { type: String },
     panCard: { type: String },
 });
 
 const restaurantSchema = new mongoose.Schema({
-    name: {
+    restaurantName: {
         type: String,
         required: true,
         trim: true
