@@ -5,12 +5,12 @@ import otpModel from "../models/otp.model";
 
 export const generateOtpController = async (req, res) => {
     try{
-        const { phone } = req.body;
-        if(!phone){
-            return res.status(400).json({ success: false, message: "Phone number is required" });
+        const { email } = req.body;
+        if(!email){
+            return res.status(400).json({ success: false, message: "Email is required" });
         }
 
-        const restaurant = await restaurantModel.findOne({ phone: phone });
+        const restaurant = await restaurantModel.findOne({ email: email });
         if(!restaurant){
             return res.status(404).json({ success: false, message: "Restaurant not found" });
         }
@@ -19,7 +19,7 @@ export const generateOtpController = async (req, res) => {
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
         const newOtp = await otpModel.findOneAndUpdate(
-            { phone: phone },
+            { email: email },
             { otp: otp, expiresAt: expiresAt, isUsed: false},
             { upsert: true, new:true }
         );
@@ -36,12 +36,12 @@ export const generateOtpController = async (req, res) => {
 
 export const verifyOtpController = async (req, res) => {
     try{
-        const { phone, otp } = req.body;
-        if(!phone || !otp){
-            return res.status(400).json({ success: false, message: "Phone and OTP are required" });
+        const { email, otp } = req.body;
+        if(!email || !otp){
+            return res.status(400).json({ success: false, message: "Email and OTP are required" });
         }
 
-        const exisitingOtp = await otpModel.findOne({ phone });
+        const exisitingOtp = await otpModel.findOne({ email });
         if(!exisitingOtp){
             return res.status(404).json({ success: false, message: "OTP not found" });
         }
@@ -58,7 +58,7 @@ export const verifyOtpController = async (req, res) => {
         exisitingOtp.isUsed = true;
         await exisitingOtp.save();
 
-        return res.status(200).json({ success: true, message: "OTP verified successfully", phone: phone });
+        return res.status(200).json({ success: true, message: "OTP verified successfully", email: email });
     }
     catch(err){
         console.log("Error in verifyOtpController: ", err.message);
