@@ -16,13 +16,14 @@ export const registerRestaurantController = async (req, res) => {
             phone,
             password,
             address,
+            cuisines,
             licenseNumber,
-            accountHolderName,
-            accountNumber,
-            IFSC,
-            bankName,
-            upi_id
+            openingTime,
+            closingTime,
+            bankDetails
         } = req.body;
+
+        console.log(req.body);
 
         const fssaiLicense = req.files?.fssaiLicense?.[0]?.path || null;
         const gstCertificate = req.files?.gstCertificate?.[0]?.path || null;
@@ -39,12 +40,33 @@ export const registerRestaurantController = async (req, res) => {
             }
         }
 
+        let parsedCuisines = {};
+        if (cuisines) {
+            try {
+                parsedCuisines = JSON.parse(cuisines);    
+            }
+            catch(err){
+                return res.status(400).json({ success: false, message: "Invalid cuisines format" });
+            }
+        }
+
         let parsedLicense = {};
         if (licenseNumber) {
             try {
-                parsedLicense = typeof licenseNumber === "string" ? JSON.parse(licenseNumber) : licenseNumber;
+                parsedLicense = JSON.parse(licenseNumber);
             } catch (err) {
                 return res.status(400).json({ success: false, message: "Invalid license number format" });
+            }
+        }
+        console.log(typeof parsedLicense.fssai);
+
+        let parsedBankDetails = {};
+        if (bankDetails) {
+            try {
+                parsedBankDetails = JSON.parse(bankDetails);    
+            }
+            catch(err){
+                return res.status(400).json({ success: false, message: "Invalid bank details format" });
             }
         }
 
@@ -60,6 +82,9 @@ export const registerRestaurantController = async (req, res) => {
             phone: phone,
             password: hashedPassword,
             address: parsedAddress,
+            cuisines: parsedCuisines,
+            openingTime: openingTime,
+            closingTime: closingTime,
             licenseNumber: {
                 fssai: parsedLicense.fssai ? encrypt(parsedLicense.fssai) : null,
                 gst: parsedLicense.gst ? encrypt(parsedLicense.gst) : null
@@ -75,24 +100,15 @@ export const registerRestaurantController = async (req, res) => {
         //RestaurantBankDetails document creation
         const newRestaurantBankDetails = await restaurantBankDetailsModel.create({
             restaurant_id: newRestaurant._id,
-            accountHolderName: accountHolderName,
-            accountNumber: encrypt(accountNumber),
-            IFSC: encrypt(IFSC),
-            bankName: bankName,
-            upi_id: upi_id ? encrypt(upi_id) : null,
+            accountHolderName: parsedBankDetails.accountHolderName,
+            accountNumber: encrypt(parsedBankDetails.accountNumber),
+            IFSC: encrypt(parsedBankDetails.IFSC),
+            bankName: parsedBankDetails.bankName,
+            upi_id: parsedBankDetails.upi_id ? encrypt(parsedBankDetails.upi_id) : null,
         });
 
         //RestaurantAnalytics document creation
         const newRestaurantAnalytics = await restaurantAnalyticsModel.create({ restaurantId: newRestaurant._id });
-
-        //JWT token
-        const token = newRestaurant.generateAuthToken();
-        res.cookie("jwt", token, {
-            httpOnly: true,
-            sameSite: "strict",
-            secure: process.env.MODE === "production",
-            maxAge: 24 * 60 * 60 * 1000
-        });
 
         //ActivityLog document creation
         const newActivityLog = await activityLogModel.create({
@@ -106,44 +122,20 @@ export const registerRestaurantController = async (req, res) => {
             }
         });
 
-        //ActivityLogs backup
-        const activityBackup = {
-            id: newActivityLog._id,
-            userId: newActivityLog.userId,
-            userType: newActivityLog.userType,
-            action: newActivityLog.action,
-            metadata: newActivityLog.metadata,
-            createdAt: newActivityLog.createdAt,
-        };
-
-        //New Restaurant backup
-        const backupData = {
-            restaurant: {
-                id: newRestaurant._id,
-                restaurantName: newRestaurant.restaurantName,
-                email: newRestaurant.email,
-                phone: newRestaurant.phone,
-                address: newRestaurant.address,
-                documents: {
-                    fssaiLicense: newRestaurant.documents.fssaiLicense,
-                    gstCertificate: newRestaurant.documents.gstCertificate,
-                    panCard: newRestaurant.documents.panCard
-                },
-                images: images
-            },
-
-            bankDetails: {
-                accountHolderName: newRestaurantBankDetails.accountHolderName,
-                bankName: newRestaurantBankDetails.bankName,
-                upi_id: newRestaurantBankDetails.upi_id,
-                accountNumber: newRestaurantBankDetails.accountNumber,
-                IFSC: newRestaurantBankDetails.IFSC
-            }
-        };
+        //JWT token
+        const token = newRestaurant.generateAuthToken();
+        res.cookie("jwt", token, {
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.MODE === "production",
+            maxAge: 24 * 60 * 60 * 1000
+        });
         
-        createBackup("restaurant", newRestaurant.restaurantName, "restaurant", backupData);    //Backup for restaurantModel
+        //Backups
+        createBackup("restaurant", newRestaurant.restaurantName, "restaurant", newRestaurant.toObject());    //Backup for restaurantModel
+        createBackup("restaurant", newRestaurant.restaurantName, "bankDetails", newRestaurantBankDetails.toObject());     //Backup for restaurantBankDetails
         createBackup("restaurant", newRestaurant.restaurantName, "restaurantAnalytics", newRestaurantAnalytics.toObject());   //Backup for restaurantAnalytics
-        createBackup("restaurant", newRestaurant.restaurantName, "activityLogs", activityBackup);    //Backup for activityLogsModel
+        createBackup("restaurant", newRestaurant.restaurantName, "activityLogs", newActivityLog.toObject());    //Backup for activityLogsModel
 
         res.status(201).json({
             success: true,
@@ -165,11 +157,11 @@ export const registerRestaurantController = async (req, res) => {
                 accountNumber: newRestaurantBankDetails.accountNumber,
                 IFSC: newRestaurantBankDetails.IFSC
             },
-            restaurantAnalytics: newRestaurantAnalytics
+            restaurantAnalytics: newRestaurantAnalytics.toObject()
         });
     }
     catch(err){
-        console.log("Error in registerRestaurantController: ", err.message);
+        console.log("Error in registerRestaurantController: ", err);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }

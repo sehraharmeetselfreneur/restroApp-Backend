@@ -1,7 +1,7 @@
 import crypto from "crypto";
 
-import restaurantModel from "../models/restaurant.model";
-import otpModel from "../models/otp.model";
+import restaurantModel from "../models/restaurant.model.js";
+import otpModel from "../models/otp.model.js";
 
 export const generateOtpController = async (req, res) => {
     try{

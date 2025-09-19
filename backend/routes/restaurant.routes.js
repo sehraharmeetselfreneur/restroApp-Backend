@@ -12,7 +12,7 @@ import { generateOtpController, verifyOtpController } from '../controllers/otp.c
 const router = express.Router();
 
 //Auth routes
-router.post('/signup', upload.fields([
+router.post('/register', upload.fields([
     { name: "fssaiLicense", maxCount: 1 }, { name: "gstCertificate", maxCount: 1 },
     { name: "panCard", maxCount: 1 }, { name: "images", maxCount: 5 }]), registerRestaurantController);
 router.post('/login', loginRestaurantController);

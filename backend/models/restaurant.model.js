@@ -73,6 +73,12 @@ const restaurantSchema = new mongoose.Schema({
         unique: true
     },
 
+    password: {
+        type: String,
+        required: true,
+        minLength: 6
+    },
+
     address: addressSchema,
 
     licenseNumber: {
