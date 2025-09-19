@@ -83,7 +83,7 @@ const customerSchema = new mongoose.Schema({
 
     role: {
         type: String,
-        default: "customer"
+        default: "Customer"
     },
 
     profileImage: {

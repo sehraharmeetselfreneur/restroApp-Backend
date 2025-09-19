@@ -51,7 +51,7 @@ const restaurantSchema = new mongoose.Schema({
 
     role: {
         type: String,
-        default: "restaurant"
+        default: "Restaurant"
     },
 
     rating: {

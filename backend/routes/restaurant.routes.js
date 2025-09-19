@@ -6,7 +6,7 @@ import { roleMiddleware } from '../middlewares/role.middleware.js';
 import { upload } from '../middlewares/file.middleware.js';
 
 //Controllers
-import { loginRestaurantController, registerRestaurantController } from '../controllers/restaurant.controller.js';
+import { getRestaurantProfileController, loginRestaurantController, logoutRestaurantController, registerRestaurantController } from '../controllers/restaurant.controller.js';
 import { generateOtpController, verifyOtpController } from '../controllers/otp.controller.js';
 
 const router = express.Router();
@@ -18,9 +18,10 @@ router.post('/register', upload.fields([
 router.post('/login', loginRestaurantController);
 router.post('/generate-otp', generateOtpController);
 router.post('/verify-otp', verifyOtpController);
+router.post('/logout', authMiddleware, roleMiddleware(["Restaurant"]), logoutRestaurantController);
 
 //Profile routes
-router.get('/profile', authMiddleware, roleMiddleware(["Restaurant"]));
+router.get('/profile', authMiddleware, roleMiddleware(["Restaurant"]), getRestaurantProfileController);
 router.put('/profile', authMiddleware, roleMiddleware(["Restaurant"]));
 
 //Menu routes

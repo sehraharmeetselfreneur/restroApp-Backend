@@ -13,6 +13,7 @@ import { sanitizeInput } from './middlewares/sanitizeInput.middleware.js';
 import { errorHandler } from './middlewares/errorHandler.middleware.js';
 
 import restaurantRoutes from './routes/restaurant.routes.js';
+import customerRoutes from './routes/customer.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,6 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use('/api/restaurant', restaurantRoutes);
+app.use('/api/customer', customerRoutes);
 
 //Error handler
 app.use(errorHandler);

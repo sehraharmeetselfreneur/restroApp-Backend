@@ -204,17 +204,7 @@ export const loginRestaurantController = async (req, res) => {
             }
         });
 
-        //activityLog backup
-        const activityBackup = {
-            id: newActivityLog._id,
-            userId: newActivityLog.userId,
-            userType: newActivityLog.userType,
-            action: newActivityLog.action,
-            metadata: newActivityLog.metadata,
-            createdAt: newActivityLog.createdAt,
-        };
-
-        createBackup("restaurant", existingRestaurant.restaurantName, "activityLogs", activityBackup);  //Backup for activityLogs Model
+        createBackup("restaurant", existingRestaurant.restaurantName, "activityLogs", newActivityLog.toObject());  //Backup for activityLogs Model
 
         res.status(200).json({
             success: true,
@@ -233,6 +223,32 @@ export const loginRestaurantController = async (req, res) => {
     }
     catch(err){
         console.log("Error in loginRestaurantController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const logoutRestaurantController = async (req, res) => {
+    try{
+        res.clearCookie("jwt");
+        res.status(200).json({ success: true, message: "Restaurant Logged out successfully" });
+    }
+    catch(err){
+        console.log("Error in logoutRestaurantController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const getRestaurantProfileController = async (req, res) => {
+    try{
+        const restaurant = await restaurantModel.findById(req.user?._id).select("-password");
+        if(!restaurant){
+            return res.status(404).json({ success: false, message: "Restaurant not found" });
+        }
+
+        res.status(200).json({ success: true, profile: restaurant });
+    }
+    catch(err){
+        console.log("Error in getRestaurantProfileController: ", err.message);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }
