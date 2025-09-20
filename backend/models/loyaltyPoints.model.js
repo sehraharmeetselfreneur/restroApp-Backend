@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const loyaltyPointsSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "Customers",
         required: true,
         unique: true // one loyalty account per user
     },

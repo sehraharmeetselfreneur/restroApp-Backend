@@ -11,14 +11,29 @@ if(!fs.existsSync(rootDir)){
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         try{
-            const restaurantName = req.body.restaurantName || "Unknown_restaurant";
+            const restaurantName = req.body.restaurantName;
+            const customerName = req.body.customerName;
+            
+            let entityType, entityName;
+            
+            if (restaurantName) {
+                entityType = "restaurants";
+                entityName = restaurantName;
+            } else if (customerName) {
+                entityType = "customers";
+                entityName = customerName;
+            } else {
+                return cb(new Error("Either restaurantName or customerName is required"));
+            }
 
             let folderType = "images";
             if(file.fieldname === "docs" || file.mimetype.includes("pdf")){
                 folderType = "docs";
             }
 
-            const uploadPath = path.join(rootDir, restaurantName, folderType);
+            // Create the full path: KYC/{entityType}/{entityName}/{folderType}
+            const sanitizedEntityName = entityName.replace(/\s+/g, "_").toLowerCase();
+            const uploadPath = path.join(rootDir, entityType, sanitizedEntityName, folderType);
 
             fs.mkdirSync(uploadPath, { recursive: true });
 

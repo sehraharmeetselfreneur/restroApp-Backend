@@ -10,8 +10,16 @@ if(!fs.existsSync(supportDir)){
 
 export const createBackup = (entityType, entityName, fileName, data) => {
     try {
-        const safeEntityName = `${entityType}_${entityName}`.replace(/\s+/g, "_").toLowerCase();
-        const entityDir = path.join(supportDir, safeEntityName);
+        // Create the entity type folder (customers/restaurants)
+        const entityTypeDir = path.join(supportDir, entityType.toLowerCase());
+        
+        if (!fs.existsSync(entityTypeDir)) {
+            fs.mkdirSync(entityTypeDir, { recursive: true });
+        }
+
+        // Create the specific entity folder (customerName/restaurantName)
+        const safeEntityName = entityName.replace(/\s+/g, "_").toLowerCase();
+        const entityDir = path.join(entityTypeDir, safeEntityName);
 
         if (!fs.existsSync(entityDir)) {
             fs.mkdirSync(entityDir, { recursive: true });

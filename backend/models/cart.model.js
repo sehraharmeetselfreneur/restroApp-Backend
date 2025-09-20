@@ -45,7 +45,7 @@ const cartSchema = new mongoose.Schema({
 
     userType: {
         type: String,
-        enum: ["Customers", "Restaurants"],
+        enum: ["Customer", "Restaurant"],
         required: true
     },
 

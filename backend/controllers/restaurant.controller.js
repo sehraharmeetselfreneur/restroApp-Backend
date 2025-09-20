@@ -132,10 +132,10 @@ export const registerRestaurantController = async (req, res) => {
         });
         
         //Backups
-        createBackup("restaurant", newRestaurant.restaurantName, "restaurant", newRestaurant.toObject());    //Backup for restaurantModel
-        createBackup("restaurant", newRestaurant.restaurantName, "bankDetails", newRestaurantBankDetails.toObject());     //Backup for restaurantBankDetails
-        createBackup("restaurant", newRestaurant.restaurantName, "restaurantAnalytics", newRestaurantAnalytics.toObject());   //Backup for restaurantAnalytics
-        createBackup("restaurant", newRestaurant.restaurantName, "activityLogs", newActivityLog.toObject());    //Backup for activityLogsModel
+        createBackup("restaurants", newRestaurant.restaurantName, "restaurant", newRestaurant.toObject());    //Backup for restaurantModel
+        createBackup("restaurants", newRestaurant.restaurantName, "bankDetails", newRestaurantBankDetails.toObject());     //Backup for restaurantBankDetails
+        createBackup("restaurants", newRestaurant.restaurantName, "restaurantAnalytics", newRestaurantAnalytics.toObject());   //Backup for restaurantAnalytics
+        createBackup("restaurants", newRestaurant.restaurantName, "activityLogs", newActivityLog.toObject());    //Backup for activityLogsModel
 
         res.status(201).json({
             success: true,
@@ -175,7 +175,7 @@ export const loginRestaurantController = async (req, res) => {
 
         const existingRestaurant = await restaurantModel.findOne({ email: email });
         if(!existingRestaurant){
-            return res.status(404).json({ success: false, message: "Restaurant not found" });
+            return res.status(404).json({ success: false, message: "Invalid credentials" });
         }
 
         const isPasswordCorrect = await existingRestaurant.comparePassword(password);
@@ -204,7 +204,7 @@ export const loginRestaurantController = async (req, res) => {
             }
         });
 
-        createBackup("restaurant", existingRestaurant.restaurantName, "activityLogs", newActivityLog.toObject());  //Backup for activityLogs Model
+        createBackup("restaurants", existingRestaurant.restaurantName, "activityLogs", newActivityLog.toObject());  //Backup for activityLogs Model
 
         res.status(200).json({
             success: true,
@@ -247,7 +247,7 @@ export const logoutRestaurantController = async (req, res) => {
             },
         });
 
-        createBackup("restaurant", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());   //Backup for activityLogsModel
+        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());   //Backup for activityLogsModel
 
         res.status(200).json({ success: true, message: "Restaurant Logged out successfully" });
     }

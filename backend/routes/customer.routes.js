@@ -1,19 +1,22 @@
 import express from 'express';
 
 //Middlewares
+import { upload } from '../middlewares/file.middleware.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { roleMiddleware } from '../middlewares/role.middleware.js';
 
 //Controllers
-import { getCustomerProfileController } from '../controllers/customer.controller.js';
+import { getCustomerProfileController, loginCustomerController, logoutCustomerController, registerCustomerController } from '../controllers/customer.controller.js';
+import { generateOtpController, verifyOtpController } from '../controllers/otp.controller.js';
 
 const router = express.Router();
 
 //Auth routes
-// router.post('/signup');
-// router.post('/login');
-// router.post('/verify-otp');
-// router.post('/resend-otp');
+router.post('/register', upload.single("profileImage"), registerCustomerController);
+router.post('/login', loginCustomerController);
+router.post('/verify-otp', generateOtpController);
+router.post('/resend-otp', verifyOtpController);
+router.post('/logout', authMiddleware, roleMiddleware(["Customer"]), logoutCustomerController)
 
 //Profile routes
 router.get('/profile', authMiddleware, roleMiddleware(["Customer"]), getCustomerProfileController);
