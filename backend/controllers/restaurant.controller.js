@@ -6,7 +6,7 @@ import restaurantAnalyticsModel from "../models/restaurantAnalytics.model.js";
 
 // Services used
 import { createBackup } from "../services/backup.service.js";
-import { encrypt } from "../services/encryption.service.js";
+import { decrypt, encrypt } from "../services/encryption.service.js";
 
 export const registerRestaurantController = async (req, res) => {
     try{
@@ -114,7 +114,7 @@ export const registerRestaurantController = async (req, res) => {
         const newActivityLog = await activityLogModel.create({
             userId: newRestaurant._id,
             userType: "Restaurant",
-            action: "login",
+            action: "registered",
             metadata: {
                 ip: req.ip,
                 userAgent: req.headers["user-agent"],
@@ -229,7 +229,26 @@ export const loginRestaurantController = async (req, res) => {
 
 export const logoutRestaurantController = async (req, res) => {
     try{
+        const restaurantId = req.user?._id;
+        const restaurant = await restaurantModel.findById(restaurantId);
+
+        //Deleting jwt token from cookies
         res.clearCookie("jwt");
+
+        //ActivityLog document creation
+        const newActivityLog = await activityLogModel.create({
+            userId: restaurantId,
+            userType: "Restaurant",
+            action: "logout",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Restaurant ${restaurant.restaurantName || "Unknown"} logged out`,
+            },
+        });
+
+        createBackup("restaurant", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());   //Backup for activityLogsModel
+
         res.status(200).json({ success: true, message: "Restaurant Logged out successfully" });
     }
     catch(err){
@@ -240,12 +259,43 @@ export const logoutRestaurantController = async (req, res) => {
 
 export const getRestaurantProfileController = async (req, res) => {
     try{
+        //Restaurant details
         const restaurant = await restaurantModel.findById(req.user?._id).select("-password");
+        const restaurantBankDetails = await restaurantBankDetailsModel.findOne({ restaurant_id: restaurant._id });
+        const restaurantAnalytics = await restaurantAnalyticsModel.findOne({ restaurantId: restaurant._id });
+
+        let decryptedRestaurant = null;
+        if (restaurant) {
+            decryptedRestaurant = {
+                ...restaurant.toObject(),
+                licenseNumber: {
+                    fssai: restaurant.licenseNumber.fssai ? decrypt(restaurant.licenseNumber.fssai) : null,
+                    gst: restaurant.licenseNumber.gst ? decrypt(restaurant.licenseNumber.gst) : null,
+                }
+            };
+        }
+
+        let decryptedRestaurantBankDetails = null;
+        if (restaurantBankDetails) {
+            decryptedRestaurantBankDetails = {
+                ...restaurantBankDetails.toObject(),
+                accountNumber: restaurantBankDetails.accountNumber ? decrypt(restaurantBankDetails.accountNumber) : null,
+                IFSC: restaurantBankDetails.IFSC ? decrypt(restaurantBankDetails.IFSC) : null,
+                upi_id: restaurantBankDetails.upi_id ? decrypt(restaurantBankDetails.upi_id) : null,
+            };
+        }
+
+
         if(!restaurant){
             return res.status(404).json({ success: false, message: "Restaurant not found" });
         }
 
-        res.status(200).json({ success: true, profile: restaurant });
+        res.status(200).json({
+            success: true,
+            profile: decryptedRestaurant,
+            bankDetails: decryptedRestaurantBankDetails,
+            analytics: restaurantAnalytics
+        });
     }
     catch(err){
         console.log("Error in getRestaurantProfileController: ", err.message);

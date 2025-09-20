@@ -18,6 +18,7 @@ const activityLogsSchema = new mongoose.Schema({
         required: true,
         trim: true,
         enum: [
+            "registered",
             "login",
             "logout",
             "viewed_restaurant",
