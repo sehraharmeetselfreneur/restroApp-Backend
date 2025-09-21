@@ -1,7 +1,10 @@
+//Required models
 import activityLogModel from "../models/activityLogs.model.js";
 import cartModel from "../models/cart.model.js";
 import customerModel from "../models/customer.model.js";
 import loyaltyPointsModel from "../models/loyaltyPoints.model.js";
+
+//Required services
 import { createBackup } from "../services/backup.service.js";
 
 export const registerCustomerController = async (req, res) => {
