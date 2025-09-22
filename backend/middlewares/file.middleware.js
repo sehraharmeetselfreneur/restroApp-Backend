@@ -11,6 +11,7 @@ if(!fs.existsSync(rootDir)){
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         try{
+            const adminName = req.body.adminName;
             const restaurantName = req.body.restaurantName;
             const customerName = req.body.customerName;
             
@@ -22,6 +23,9 @@ const storage = multer.diskStorage({
             } else if (customerName) {
                 entityType = "customers";
                 entityName = customerName;
+            } else if (adminName) {
+                entityType = "admins";
+                entityName = adminName;
             } else {
                 return cb(new Error("Either restaurantName or customerName is required"));
             }

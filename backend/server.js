@@ -12,6 +12,7 @@ import connectToDB from './lib/connectToDB.js';
 import { sanitizeInput } from './middlewares/sanitizeInput.middleware.js';
 import { errorHandler } from './middlewares/errorHandler.middleware.js';
 
+import adminRoutes from './routes/admin.routes.js';
 import restaurantRoutes from './routes/restaurant.routes.js';
 import customerRoutes from './routes/customer.routes.js';
 
@@ -30,6 +31,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
+app.use('/api/admin', adminRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/customer', customerRoutes);
 

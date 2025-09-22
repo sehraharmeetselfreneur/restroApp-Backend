@@ -1,14 +1,14 @@
-import activityLogModel from "../models/activityLogs.model";
-import adminModel from "../models/admin.model";
-import restaurantModel from "../models/restaurant.model";
-import restaurantBankDetailsModel from "../models/restaurant_bank_details.model";
-import { createBackup } from "../services/backup.service";
-import { decrypt } from "../services/encryption.service";
+import activityLogModel from "../models/activityLogs.model.js";
+import adminModel from "../models/admin.model.js";
+import restaurantModel from "../models/restaurant.model.js";
+import restaurantBankDetailsModel from "../models/restaurant_bank_details.model.js";
+import { createBackup } from "../services/backup.service.js";
+import { decrypt } from "../services/encryption.service.js";
 
 export const registerAdminController = async (req, res) => {
     try{
         const {
-            fullName,
+            adminName,
             email,
             password,
             phone,
@@ -16,7 +16,12 @@ export const registerAdminController = async (req, res) => {
             permissions
         } = req.body;
 
-        const profileImage = req.files?.profileImage?.[0]?.path || null;
+        console.log(req.body);
+        const profileImage = req.file.path || null;
+
+        if (typeof permissions === "string") {
+            permissions = JSON.parse(permissions);
+        }
 
         const existingAdmin = await adminModel.findOne({ $or: [{ email: email }, { phone: phone }] });
         if(existingAdmin){
@@ -25,7 +30,7 @@ export const registerAdminController = async (req, res) => {
 
         const hashedPassword = await adminModel.hashPassword(password);
         const newAdmin = await adminModel.create({
-            fullName: fullName,
+            adminName: adminName,
             email: email,
             password: hashedPassword,
             phone: phone,
@@ -49,8 +54,8 @@ export const registerAdminController = async (req, res) => {
         await newAdmin.save();
 
         //Backups
-        createBackup("admins", newAdmin.fullName, "admin", newAdmin.toObject());
-        createBackup("admins", newAdmin.fullName, "activityLogs", newActivityLog.toObject());
+        createBackup("admins", newAdmin.adminName, "admin", newAdmin.toObject());
+        createBackup("admins", newAdmin.adminName, "activityLogs", newActivityLog.toObject());
 
         const token = newAdmin.generateAuthToken();
         res.cookie("jwt", token, {
@@ -173,6 +178,25 @@ export const logoutAdminController = async (req, res) => {
     }
     catch(err){
         console.log("Error in logoutAdminController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const getAdminProfileController = async (req, res) => {
+    try{
+        const adminId = req.user?._id;
+        const admin = await adminModel.findById(adminId).select("-password");
+        if(!admin){
+            return res.status(404).json({ success: false, message: "Admin not found" });
+        }
+
+        res.status(200).json({
+            success: true,
+            profile: admin
+        })
+    }
+    catch(err){
+        console.log("Error in getAdminProfileController: ", err.message);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }
