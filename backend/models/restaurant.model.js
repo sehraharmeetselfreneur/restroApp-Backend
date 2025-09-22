@@ -97,7 +97,13 @@ const restaurantSchema = new mongoose.Schema({
     },
 
     isOpen: {
-        type: Boolean, default: false
+        type: Boolean,
+        default: false
+    },
+
+    isVerified: {
+        type: Boolean,
+        default: false
     },
 
     images: [{ type: String }]
