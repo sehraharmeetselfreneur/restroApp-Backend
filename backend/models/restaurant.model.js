@@ -42,6 +42,12 @@ const restaurantSchema = new mongoose.Schema({
         trim: true
     },
 
+    ownerName: {
+        type: String,
+        required: true,
+        trim: true
+    },
+
     description: {
         type: String,
         trim: true

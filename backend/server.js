@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import path from "path";
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 
@@ -34,6 +35,8 @@ app.use(cookieParser());
 app.use('/api/admin', adminRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/customer', customerRoutes);
+
+app.use("/kyc", express.static(path.join(process.cwd(), "KYC")));
 
 //Error handler
 app.use(errorHandler);

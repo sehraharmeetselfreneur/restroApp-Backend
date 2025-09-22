@@ -12,8 +12,10 @@ export const registerRestaurantController = async (req, res) => {
     try{
         const {
             restaurantName,
+            ownerName,
             email,
             phone,
+            description,
             password,
             address,
             cuisines,
@@ -22,8 +24,6 @@ export const registerRestaurantController = async (req, res) => {
             closingTime,
             bankDetails
         } = req.body;
-
-        console.log(req.body);
 
         const fssaiLicense = req.files?.fssaiLicense?.[0]?.path || null;
         const gstCertificate = req.files?.gstCertificate?.[0]?.path || null;
@@ -78,9 +78,11 @@ export const registerRestaurantController = async (req, res) => {
         const hashedPassword = await restaurantModel.hashPassword(password);
         const newRestaurant = await restaurantModel.create({
             restaurantName: restaurantName,
+            ownerName: ownerName,
             email: email,
             phone: phone,
             password: hashedPassword,
+            description: description,
             address: parsedAddress,
             cuisines: parsedCuisines,
             openingTime: openingTime,
@@ -233,7 +235,12 @@ export const logoutRestaurantController = async (req, res) => {
         const restaurant = await restaurantModel.findById(restaurantId);
 
         //Deleting jwt token from cookies
-        res.clearCookie("jwt");
+        res.clearCookie("jwt", {
+            httpOnly: true,
+            sameSite: "strict",
+            secure: process.env.MODE === "production",
+            maxAge: 24 * 60 * 60 * 1000
+        });
 
         //ActivityLog document creation
         const newActivityLog = await activityLogModel.create({

@@ -46,7 +46,7 @@ export const registerAdminController = async (req, res) => {
             metadata: {
                 ip: req.ip,
                 userAgent: req.headers["user-agent"],
-                message: `Admin ${newAdmin.fullName} registered and logged in`
+                message: `Admin ${newAdmin.adminName} registered and logged in`
             }
         });
 
@@ -67,10 +67,10 @@ export const registerAdminController = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: `Admin ${newAdmin.fullName} registered successfully`,
+            message: `Admin ${newAdmin.adminName} registered successfully`,
             token: token,
             admin: {
-                fullName: newAdmin.fullName,
+                adminName: newAdmin.adminName,
                 email: newAdmin.email,
                 phone: newAdmin.phone,
                 role: newAdmin.role,
@@ -114,22 +114,22 @@ export const loginAdminController = async (req, res) => {
             metadata: {
                 ip: req.ip,
                 userAgent: req.headers["user-agent"],
-                message: `Admin ${admin.fullName} logged in`
+                message: `Admin ${admin.adminName} logged in`
             }
         });
 
         admin.activityLogs.push(newActivityLog._id);
         await admin.save();
 
-        createBackup("admins", admin.fullName, "activityLogs", newActivityLog.toObject());
+        createBackup("admins", admin.adminName, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({
             success: true,
-            message: `Welcome back, ${admin.fullName}!`,
+            message: `Welcome back, ${admin.adminName}!`,
             token,
             admin: {
                 id: admin._id,
-                fullName: admin.fullName,
+                adminName: admin.adminName,
                 email: admin.email,
                 phone: admin.phone,
                 role: admin.role,
@@ -165,14 +165,14 @@ export const logoutAdminController = async (req, res) => {
             metadata: {
                 ip: req.ip,
                 userAgent: req.headers["user-agent"],
-                message: `Admin ${admin.fullName} logged out`
+                message: `Admin ${admin.adminName} logged out`
             }
         });
 
         admin.activityLogs.push(newActivityLog._id);
         await admin.save();
 
-        createBackup("admins", admin.fullName, "activityLogs", newActivityLog.toObject());
+        createBackup("admins", admin.adminName, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({ success: true, message: "Successfully logged out" });
     }
@@ -203,7 +203,7 @@ export const getAdminProfileController = async (req, res) => {
 
 export const getRestaurantsController = async (req, res) => {
     try{
-        const restaurants = await restaurantModel.find().select("-password");
+        const restaurants = await restaurantModel.find().select("-password").sort({ createdAt: -1 });
         
         res.status(200).json({
             success: true,
@@ -279,7 +279,7 @@ export const veriyRestaurantController = async (req, res) => {
             }
         });
 
-        createBackup("admins", admin.fullName, "activityLogs", newActivityLog.toObject());
+        createBackup("admins", admin.adminName, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({
             success: true,
