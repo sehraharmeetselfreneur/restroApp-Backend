@@ -1,7 +1,13 @@
 import activityLogModel from "../models/activityLogs.model.js";
 import adminModel from "../models/admin.model.js";
+import customerModel from "../models/customer.model.js";
+import orderModel from "../models/orders.model.js";
 import restaurantModel from "../models/restaurant.model.js";
 import restaurantBankDetailsModel from "../models/restaurant_bank_details.model.js";
+import foodItemModel from "../models/foodItems.model.js";
+import menuCategoryModel from "../models/menu_categories.model.js";
+
+// Services functions
 import { createBackup } from "../services/backup.service.js";
 import { decrypt } from "../services/encryption.service.js";
 
@@ -203,7 +209,9 @@ export const getAdminProfileController = async (req, res) => {
 
 export const getRestaurantsController = async (req, res) => {
     try{
-        const restaurants = await restaurantModel.find().select("-password").sort({ createdAt: -1 });
+        const restaurants = await restaurantModel.find()
+            .select("-password").populate("orders bankDetails restaurantAnalytics menu foodItems")
+            .sort({ createdAt: -1 });
         
         res.status(200).json({
             success: true,
@@ -253,12 +261,13 @@ export const getRestaurantByIdController = async (req, res) => {
     }
 }
 
-export const veriyRestaurantController = async (req, res) => {
+export const verifyRestaurantController = async (req, res) => {
     try{
         const { id } = req.params;
+        console.log(req.body);
         const { isVerified } = req.body;
 
-        const admin = await adminModel.findById(id);
+        const admin = await adminModel.findById(req.user?._id);
 
         const restaurant = await restaurantModel.findById(id);
         if(!restaurant){
@@ -288,6 +297,58 @@ export const veriyRestaurantController = async (req, res) => {
     }
     catch(err){
         console.log("Error in verifyRestaurantController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const getAllCustomersController = async (req, res) => {
+    try{
+        const customers = await customerModel.find().select("-password").sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            customersCount: customers.length,
+            customers: customers
+        });
+    }
+    catch(err){
+        console.log("Error in getAllCustomersController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const getCustomerByIdController = async (req, res) => {
+    try{
+        const { id } = req.params;
+
+        const customer = await customerModel.findById(id);
+        if(!customer){
+            return res.status(404).json({ success: false, message: "Customer not found" });
+        }
+
+        res.status(200).json({
+            success: true,
+            customer: customer
+        });
+    }
+    catch(err){
+        console.log("Error in getCustomerByIdController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const getOrdersController = async (req, res) => {
+    try{
+        const orders = await orderModel.find().populate("customer_id restaurant_id");
+
+        res.status(200).json({
+            success: true,
+            ordersCount: orders.length,
+            orders: orders
+        });
+    }
+    catch(err){
+        console.log("Error in getOrdersController: ", err.message);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }

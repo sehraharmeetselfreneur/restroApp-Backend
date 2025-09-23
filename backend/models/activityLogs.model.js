@@ -29,6 +29,8 @@ const activityLogsSchema = new mongoose.Schema({
             "updated_profile",
             "applied_coupon",
             "made_payment",
+            "verify_restaurant",
+            "reject_restaurant",
             "other",
         ],
     },

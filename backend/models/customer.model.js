@@ -101,7 +101,7 @@ const customerSchema = new mongoose.Schema({
 
     address: [addressSchema],
 
-    orderHistory: [ { type: mongoose.Schema.Types.ObjectId, ref: "Orders" } ],
+    orders: [ { type: mongoose.Schema.Types.ObjectId, ref: "Orders" } ],
 
     paymentMethod: [paymentMethodSchema],
 

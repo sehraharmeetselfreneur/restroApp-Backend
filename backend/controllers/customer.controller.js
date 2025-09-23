@@ -18,7 +18,7 @@ export const registerCustomerController = async (req, res) => {
             gender,
             address
         } = req.body;
-        const profileImage = req.files?.profileImage?.[0]?.path || null;
+        const profileImage = req.file?.path || null;
 
         let parsedAddress = [];
         if(address){

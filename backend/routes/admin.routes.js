@@ -1,17 +1,22 @@
 import express from "express";
 
+// Middlewares
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { roleMiddleware } from "../middlewares/role.middleware.js";
 import { upload } from "../middlewares/file.middleware.js";
 
+// Controllers
 import {
     getAdminProfileController,
+    getAllCustomersController,
+    getCustomerByIdController,
+    getOrdersController,
     getRestaurantByIdController,
     getRestaurantsController,
     loginAdminController,
     logoutAdminController,
     registerAdminController,
-    veriyRestaurantController
+    verifyRestaurantController
 } from "../controllers/admin.controller.js";
 
 const router = express.Router();
@@ -26,9 +31,13 @@ router.get('/profile', authMiddleware, roleMiddleware(["Admin", "SuperAdmin"]), 
 //Restaurant Routes
 router.get('/restaurants', authMiddleware, roleMiddleware(["Admin", "SuperAdmin"]), getRestaurantsController);
 router.get('/restaurant/:id', authMiddleware, roleMiddleware(["Admin", "SuperAdmin"]), getRestaurantByIdController);
-router.post('/verify-restaurant/:id', authMiddleware, roleMiddleware(["Admin", "SuperAdmin"]), veriyRestaurantController);
+router.post('/verify-restaurant/:id', authMiddleware, roleMiddleware(["Admin", "SuperAdmin"]), verifyRestaurantController);
 
-// router.get('/customers');
+router.get('/customers', authMiddleware, roleMiddleware(["Admin", "SuperAdmin"]), getAllCustomersController);
+router.get('/customers/:id', authMiddleware, roleMiddleware(["Admin", "SuperAdmin"]), getCustomerByIdController);
+
+router.get('/orders', authMiddleware, roleMiddleware(["Admin", "SuperAdmin"]), getOrdersController);
+
 // router.get('/orders');
 // router.get('/payments');
 // router.put('/block-user/:id');

@@ -53,7 +53,38 @@ const restaurantSchema = new mongoose.Schema({
         trim: true
     },
 
+    bankDetails: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "RestaurantBankDetails"
+    },
+
+    restaurantAnalytics: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "RestaurantAnalytics"
+    },
+
     cuisines: [{ type: String }],
+
+    menu: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "MenuCategory"
+        }
+    ],
+
+    foodItems: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "FoodItems"
+        }
+    ],
+
+    orders: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Orders"
+        }
+    ],
 
     role: {
         type: String,

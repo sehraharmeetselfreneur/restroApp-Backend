@@ -31,13 +31,13 @@ const orderItemSchema = new mongoose.Schema({
 const ordersSchema = new mongoose.Schema({
     customer_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "Customers",
         required: true,
     },
 
     restaurant_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Restaurant",
+        ref: "Restaurants",
         required: true,
     },
 

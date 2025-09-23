@@ -85,6 +85,7 @@ export const registerRestaurantController = async (req, res) => {
             description: description,
             address: parsedAddress,
             cuisines: parsedCuisines,
+            menu: [],
             openingTime: openingTime,
             closingTime: closingTime,
             licenseNumber: {
@@ -97,7 +98,7 @@ export const registerRestaurantController = async (req, res) => {
                 panCard: panCard
             },
             images: images
-        });
+        }); 
 
         //RestaurantBankDetails document creation
         const newRestaurantBankDetails = await restaurantBankDetailsModel.create({
@@ -123,6 +124,10 @@ export const registerRestaurantController = async (req, res) => {
                 message: `Restaurant ${newRestaurant.restaurantName} registered and logged in`
             }
         });
+
+        newRestaurant.bankDetails = newRestaurantBankDetails._id;
+        newRestaurant.restaurantAnalytics = newRestaurantAnalytics._id;
+        await newRestaurant.save();
 
         //JWT token
         const token = newRestaurant.generateAuthToken();
@@ -232,7 +237,13 @@ export const loginRestaurantController = async (req, res) => {
 export const logoutRestaurantController = async (req, res) => {
     try{
         const restaurantId = req.user?._id;
+        if(!restaurantId){
+            return res.status(404).json({ success: false, message: "Unauthorized: Admin not logged in" });
+        }
         const restaurant = await restaurantModel.findById(restaurantId);
+        if(!restaurant){
+            return res.status(404).json({ success: false, message: "Restaurant not found" });
+        }
 
         //Deleting jwt token from cookies
         res.clearCookie("jwt", {
