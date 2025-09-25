@@ -6,7 +6,7 @@ import { roleMiddleware } from '../middlewares/role.middleware.js';
 import { upload } from '../middlewares/file.middleware.js';
 
 //Controllers
-import { getRestaurantProfileController, loginRestaurantController, logoutRestaurantController, registerRestaurantController } from '../controllers/restaurant.controller.js';
+import { addFoodItemController, addMenuCategoryController, deleteFoodItemController, getRestaurantProfileController, loginRestaurantController, logoutRestaurantController, registerRestaurantController, updateFoodItemController } from '../controllers/restaurant.controller.js';
 import { generateOtpController, verifyOtpController } from '../controllers/otp.controller.js';
 
 const router = express.Router();
@@ -25,10 +25,15 @@ router.get('/profile', authMiddleware, roleMiddleware(["Restaurant"]), getRestau
 router.put('/profile', authMiddleware, roleMiddleware(["Restaurant"]));
 
 //Menu routes
-router.post('/menu', authMiddleware, roleMiddleware(["Restaurant"]));
-router.get('/menu', authMiddleware, roleMiddleware(["Restaurant"]));
+router.post('/menu', authMiddleware, roleMiddleware(["Restaurant"]), addMenuCategoryController);
+// router.get('/menu', authMiddleware, roleMiddleware(["Restaurant"]));  MAY NOT BE NEEDED
 router.put('/menu/:id', authMiddleware, roleMiddleware(["Restaurant"]));
 router.delete('/menu/:id', authMiddleware, roleMiddleware(["Restaurant"]));
+
+// Food Item routes
+router.post('/food-item', authMiddleware, roleMiddleware(["Restaurant"]), upload.fields([ { name: "images", maxCount: 5 } ]), addFoodItemController);
+router.put('/food-item/:id', authMiddleware, roleMiddleware(["Restaurant"]), upload.fields([ { name: "images", maxCount: 5 }]), updateFoodItemController);
+router.delete('/food-item/:id', authMiddleware, roleMiddleware(["Restaurant"]), deleteFoodItemController);
 
 //Orders routes
 router.get('/orders', authMiddleware, roleMiddleware(["Restaurant"]));

@@ -1,5 +1,7 @@
 //Models used
 import activityLogModel from "../models/activityLogs.model.js";
+import foodItemModel from "../models/foodItems.model.js";
+import menuCategoryModel from "../models/menu_categories.model.js";
 import restaurantModel from "../models/restaurant.model.js";
 import restaurantBankDetailsModel from "../models/restaurant_bank_details.model.js";
 import restaurantAnalyticsModel from "../models/restaurantAnalytics.model.js";
@@ -25,10 +27,25 @@ export const registerRestaurantController = async (req, res) => {
             bankDetails
         } = req.body;
 
-        const fssaiLicense = req.files?.fssaiLicense?.[0]?.path || null;
-        const gstCertificate = req.files?.gstCertificate?.[0]?.path || null;
-        const panCard = req.files?.panCard?.[0]?.path || null;
-        const images = req.files?.images?.map(file => file.path) || [];
+        const fssaiLicense = req.files?.fssaiLicense?.[0]?.path ? req.files.fssaiLicense[0].path.replace(/\\/g, "/").split("KYC/")[1]
+            ? "/KYC/" + req.files.fssaiLicense[0].path.replace(/\\/g, "/").split("KYC/")[1]
+            : null
+          : null;
+
+        const gstCertificate = req.files?.gstCertificate?.[0]?.path ? req.files.gstCertificate[0].path.replace(/\\/g, "/").split("KYC/")[1]
+            ? "/KYC/" + req.files.gstCertificate[0].path.replace(/\\/g, "/").split("KYC/")[1]
+            : null
+          : null;
+
+        const panCard = req.files?.panCard?.[0]?.path ? req.files.panCard[0].path.replace(/\\/g, "/").split("KYC/")[1]
+            ? "/KYC/" + req.files.panCard[0].path.replace(/\\/g, "/").split("KYC/")[1]
+            : null
+          : null;
+
+        const images = req.files?.images?.map(file => {
+            const relativePath = file.path.split("KYC")[1]; 
+            return `/KYC${relativePath.replace(/\\/g, "/")}`; 
+        }) || [];
 
         let parsedAddress = {};
         if (address) {
@@ -278,7 +295,23 @@ export const logoutRestaurantController = async (req, res) => {
 export const getRestaurantProfileController = async (req, res) => {
     try{
         //Restaurant details
-        const restaurant = await restaurantModel.findById(req.user?._id).select("-password");
+        const restaurant = await restaurantModel.findById(req.user?._id)
+            .select("-password")
+            .populate("orders")
+            .populate({
+                path: "foodItems",
+                populate: {
+                    path: "category_id",
+                    model: "MenuCategory"
+                }
+            })
+            .populate({
+                path: "menu",
+                populate: {
+                    path: "items",
+                    model: "FoodItems"
+                }
+            });
         const restaurantBankDetails = await restaurantBankDetailsModel.findOne({ restaurant_id: restaurant._id });
         const restaurantAnalytics = await restaurantAnalyticsModel.findOne({ restaurantId: restaurant._id });
 
@@ -317,6 +350,253 @@ export const getRestaurantProfileController = async (req, res) => {
     }
     catch(err){
         console.log("Error in getRestaurantProfileController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const addMenuCategoryController = async (req, res) => {
+    try{
+        const restaurantId = req.user?._id;
+        const { name, description } = req.body;
+
+        if(!name){
+            return res.status(400).json({ success: false, message: "Category name is required" });
+        }
+
+        const restaurant = await restaurantModel.findById(restaurantId);
+        if(!restaurant){
+            return res.status(404).json({ success: false, message: "Restaurant not found" });
+        }
+
+        const existingCategory = await menuCategoryModel.findOne({ restaurant_id: restaurantId, name: name });
+        if(existingCategory){
+            return res.status(400).json({ success: false, message: "Menu category already exists" });
+        }
+
+        const newCategory = await menuCategoryModel.create({
+            restaurant_id: restaurantId,
+            name: name,
+            description: description || ""
+        });
+
+        const newActivityLog = await activityLogModel.create({
+            userId: restaurant._id,
+            userType: "Restaurant",
+            action: "added_menu_category",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Restaurant ${restaurant.restaurantName || "Unknown"} added ${newCategory.name} Menu Category`,
+            }
+        });
+
+        restaurant.menu.push(newCategory._id);
+        await restaurant.save();
+
+        createBackup("restaurants", restaurant.restaurantName, "menuCategory", newCategory.toObject());
+        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());
+
+        res.status(201).json({
+            success: true,
+            message: "Menu Category added successfully",
+            category: newCategory
+        })
+    }
+    catch(err){
+        console.log("Error in addMenuCategoryController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const addFoodItemController = async (req, res) => {
+    try{
+        const restaurantId = req.user?._id;
+        console.log(req.body);
+        const {
+            category_name,
+            name,
+            description,
+            price,
+            discount_price,
+            isAvailable,
+            preparationTime,
+            isVeg,
+            tags,
+            variants
+        } = req.body;
+
+        const images = req.files?.images?.map(file => {
+            const relativePath = file.path.split("KYC")[1]; 
+            return `/KYC${relativePath.replace(/\\/g, "/")}`; 
+        }) || [];
+
+        if (!category_name || !name || !price) {
+            return res.status(400).json({ success: false, message: "Category, name, and price are required" });
+        }
+
+        const menuCategory = await menuCategoryModel.findOne({ name: category_name });
+        const restaurant =  await restaurantModel.findById(restaurantId);
+        if (!restaurant) {
+            return res.status(404).json({ success: false, message: "Restaurant not found" });
+        }
+
+        const newFoodItem = await foodItemModel.create({
+            restaurant_id: restaurantId,
+            category_id: menuCategory._id,
+            name: name,
+            description: description || "",
+            images: images,
+            price: price,
+            discount_price: discount_price || null,
+            isAvailable: isAvailable !== undefined ? isAvailable : true,
+            preparationTime: preparationTime || 15,
+            isVeg: isVeg !== undefined ? isVeg : true,
+            tags: tags ? JSON.parse(tags) : [],
+            variants: variants ? JSON.parse(variants) : []
+        });
+
+        restaurant.foodItems.push(newFoodItem._id);
+        menuCategory.items.push(newFoodItem._id);
+        await restaurant.save();
+        await menuCategory.save();
+
+        const newActivityLog = await activityLogModel.create({
+            userId: restaurant._id,
+            userType: "Restaurant",
+            action: "added_food_item",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Restaurant ${restaurant.restaurantName || "Unknown"} added ${newFoodItem.name} Food Item`,
+            }
+        });
+
+        createBackup("restaurants", restaurant.restaurantName, "foodItems", newFoodItem.toObject());
+        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());
+
+        res.status(201).json({
+            success: true,
+            message: "Food Item added successfully",
+            foodItem: newFoodItem
+        });
+    }
+    catch(err){
+        console.log("Error in addFoodItemController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const deleteFoodItemController = async (req, res) => {
+    try{
+        const { id } = req.params;
+        const restaurantId = req.user?._id;
+
+        const deletedFoodItem = await foodItemModel.findByIdAndDelete(id);
+        const restaurant = await restaurantModel.findById(restaurantId);
+        const newActivityLog = await activityLogModel.create({
+            userId: restaurantId,
+            userType: "Restaurant",
+            action: "deleted_food_item",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Restaurant ${restaurant.restaurantName || "Unknown"} deleted ${deletedFoodItem.name} Food Item`,
+            }
+        });
+
+        createBackup("restaurants", restaurant.restaurantName, "restaurant", restaurant.toObject());
+        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());
+
+        res.status(200).json({
+            success: true,
+            message: `Food item ${deletedFoodItem.name} deleted successfully!`,
+            deletedFoodItem: deletedFoodItem
+        });
+    }
+    catch(err){
+        console.log("Error in deleteFoodItemController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const updateFoodItemController = async (req, res) => {
+    try{
+        const { id } = req.params;
+        const restaurantId = req.user?._id;
+        console.log(req.body);
+
+        const {
+            category_name,
+            name,
+            description,
+            price,
+            discount_price,
+            isAvailable,
+            preparationTime,
+            isVeg,
+            tags,
+            variants
+        } = req.body;
+
+        if (!category_name || !name || !price) {
+            return res.status(400).json({ success: false, message: "Category, name, and price are required" });
+        }
+
+        const restaurant = await restaurantModel.findById(restaurantId);
+        if (!category_name || !name || !price) {
+            return res.status(400).json({ success: false, message: "Category, name, and price are required" });
+        }
+
+        const foodItem = await foodItemModel.findById(id);
+        if (!restaurant) {
+            return res.status(404).json({ success: false, message: "Restaurant not found" });
+        }
+
+        const menuCategory = await menuCategoryModel.findOne({ name: category_name });
+        if (!menuCategory) {
+            return res.status(404).json({ success: false, message: "Menu category not found" });
+        }
+
+        const images = req.files?.images?.map(file => {
+            const relativePath = file.path.split("KYC")[1]; 
+            return `/KYC${relativePath.replace(/\\/g, "/")}`; 
+        }) || foodItem.images;
+
+        foodItem.category_id = menuCategory._id;
+        foodItem.name = name;
+        foodItem.description = description || "";
+        foodItem.price = price;
+        foodItem.discount_price = discount_price || null;
+        foodItem.isAvailable = isAvailable !== undefined ? isAvailable : foodItem.isAvailable;
+        foodItem.preparationTime = preparationTime || foodItem.preparationTime;
+        foodItem.isVeg = isVeg !== undefined ? isVeg : foodItem.isVeg;
+        foodItem.tags = tags ? JSON.parse(tags) : foodItem.tags;
+        foodItem.variants = variants ? JSON.parse(variants) : foodItem.variants;
+        foodItem.images = images;
+        await foodItem.save();
+
+        const newActivityLog = await activityLogModel.create({
+            userId: restaurant._id,
+            userType: "Restaurant",
+            action: "updated_food_item",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Restaurant ${restaurant.restaurantName || "Unknown"} updated ${foodItem.name} Food Item`,
+            }
+        });
+
+        createBackup("restaurants", restaurant.restaurantName, "foodItems", foodItem.toObject());
+        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());
+
+        res.status(200).json({
+            success: true,
+            message: `${foodItem.name} updated successfully`,
+            foodItem: foodItem
+        });
+    }
+    catch(err){
+        console.log("Error in updateFoodItemController: ", err.message);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }
