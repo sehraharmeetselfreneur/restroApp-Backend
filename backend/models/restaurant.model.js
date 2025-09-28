@@ -89,6 +89,13 @@ const restaurantSchema = new mongoose.Schema({
         }
     ],
 
+    reviews: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Reviews"
+        }
+    ],
+
     role: {
         type: String,
         default: "Restaurant"
@@ -136,6 +143,11 @@ const restaurantSchema = new mongoose.Schema({
         type: String
     },
 
+    pureVeg: {
+        type: Boolean,
+        default: false
+    },
+
     isOpen: {
         type: Boolean,
         default: false
@@ -147,6 +159,16 @@ const restaurantSchema = new mongoose.Schema({
     },
 
     isTrending: {
+        type: Boolean,
+        default: false
+    },
+
+    isPromoted: {
+        type: Boolean,
+        default: false
+    },
+
+    fastDelivery: {
         type: Boolean,
         default: false
     },

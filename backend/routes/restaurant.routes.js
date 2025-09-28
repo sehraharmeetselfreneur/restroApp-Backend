@@ -14,7 +14,7 @@ const router = express.Router();
 //Auth routes
 router.post('/register', upload.fields([
     { name: "fssaiLicense", maxCount: 1 }, { name: "gstCertificate", maxCount: 1 },
-    { name: "panCard", maxCount: 1 }, { name: "images", maxCount: 5 }]), registerRestaurantController);
+    { name: "panCard", maxCount: 1 }, { name: "images", maxCount: 5 }, { name: "bannerImage", maxCount: 1 }]), registerRestaurantController);
 router.post('/login', loginRestaurantController);
 router.post('/generate-otp', generateOtpController);
 router.post('/verify-otp', verifyOtpController);

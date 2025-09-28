@@ -55,6 +55,10 @@ const ordersSchema = new mongoose.Schema({
         default: "pending",
     },
 
+    outForDeliveryAt: { type: Date },
+
+    deliveredAt: { type: Date },
+
     items: [orderItemSchema],
 
     special_instructions: {

@@ -115,6 +115,13 @@ const customerSchema = new mongoose.Schema({
         ref: "Notifications"
     },
 
+    favourites: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Restaurants"
+        }
+    ],
+
     isVerified: {
         type: Boolean,
         default: false
