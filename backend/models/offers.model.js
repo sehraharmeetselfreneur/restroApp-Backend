@@ -1,0 +1,38 @@
+import mongoose from 'mongoose';
+
+const offerSchema = new mongoose.Schema({
+    restaurant: { 
+      type: mongoose.Schema.Types.ObjectId, 
+      ref: "Restaurant", 
+      required: true 
+    },
+
+    foodItems: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "FoodItem" }
+    ],
+
+    menuCategory: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "MenuCategory"
+    },
+
+    title: { type: String, required: true },
+
+    description: { type: String },
+
+    discountType: { 
+      type: String, 
+      enum: ["percentage", "flat"], 
+      required: true 
+    },
+
+    discountValue: { type: Number, required: true },
+    minOrderAmount: { type: Number, default: 0 },
+    startDate: { type: Date, required: true },
+    endDate: { type: Date, required: true },
+    isActive: { type: Boolean, default: true }
+}, { timestamps: true });
+
+const offerModel = mongoose.model('Offers', offerSchema);
+
+export default offerModel;

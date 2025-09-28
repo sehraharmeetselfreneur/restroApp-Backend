@@ -10,6 +10,7 @@ import menuCategoryModel from "../models/menu_categories.model.js";
 // Services functions
 import { createBackup } from "../services/backup.service.js";
 import { decrypt } from "../services/encryption.service.js";
+import adminAnalyticsModel from "../models/adminAnalytics.model.js";
 
 export const registerAdminController = async (req, res) => {
     try{
@@ -45,6 +46,7 @@ export const registerAdminController = async (req, res) => {
             profileImage: profileImage
         });
 
+        const newAdminAnalytics = await adminAnalyticsModel.create();
         const newActivityLog = await activityLogModel.create({
             userId: newAdmin._id,
             userType: "Admin",
@@ -61,6 +63,7 @@ export const registerAdminController = async (req, res) => {
 
         //Backups
         createBackup("admins", newAdmin.adminName, "admin", newAdmin.toObject());
+        createBackup("admins", newAdmin.adminName, "adminAnalytics", newAdminAnalytics.toObject());
         createBackup("admins", newAdmin.adminName, "activityLogs", newActivityLog.toObject());
 
         const token = newAdmin.generateAuthToken();

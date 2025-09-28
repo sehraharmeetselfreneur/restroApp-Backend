@@ -47,12 +47,36 @@ export const registerRestaurantController = async (req, res) => {
             return `/KYC${relativePath.replace(/\\/g, "/")}`; 
         }) || [];
 
+        const bannerImage = req.files?.bannerImage?.[0]?.path ? req.files.bannerImage[0].path.replace(/\\/g, "/").split("KYC/")[1]
+            ? "/KYC/" + req.files.bannerImage[0].path.replace(/\\/g, "/").split("KYC/")[1]
+            : null
+          : null;
+
         let parsedAddress = {};
         if (address) {
             try {
-                parsedAddress = JSON.parse(address);    
+                const addr = JSON.parse(address);
+            
+                // Ensure coordinates are valid
+                if (!addr.geoLocation || !Array.isArray(addr.geoLocation.coordinates) || addr.geoLocation.coordinates.length !== 2) {
+                    return res.status(400).json({ success: false, message: "Invalid geoLocation coordinates. Must be [longitude, latitude]" });
+                }
+            
+                parsedAddress = {
+                    street: addr.street,
+                    city: addr.city,
+                    state: addr.state,
+                    pincode: addr.pincode,
+                    geoLocation: {
+                        type: "Point",
+                        coordinates: [
+                            Number(addr.geoLocation.coordinates[0]), // longitude
+                            Number(addr.geoLocation.coordinates[1])  // latitude
+                        ]
+                    }
+                };
             }
-            catch(err){
+            catch (err) {
                 return res.status(400).json({ success: false, message: "Invalid address format" });
             }
         }
@@ -114,7 +138,8 @@ export const registerRestaurantController = async (req, res) => {
                 gstCertificate: gstCertificate,
                 panCard: panCard
             },
-            images: images
+            images: images,
+            bannerImage: bannerImage
         }); 
 
         //RestaurantBankDetails document creation

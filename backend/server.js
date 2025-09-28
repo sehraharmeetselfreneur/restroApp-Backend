@@ -16,6 +16,9 @@ import { errorHandler } from './middlewares/errorHandler.middleware.js';
 import adminRoutes from './routes/admin.routes.js';
 import restaurantRoutes from './routes/restaurant.routes.js';
 import customerRoutes from './routes/customer.routes.js';
+import homeRoutes from './routes/home.routes.js';
+
+import { startCronJobs } from './utils/cronJobs.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -35,12 +38,14 @@ app.use(cookieParser());
 app.use('/api/admin', adminRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/customer', customerRoutes);
+app.use('/api/home', homeRoutes);
 
 app.use("/kyc", express.static(path.join(process.cwd(), "KYC")));
 
 //Error handler
 app.use(errorHandler);
 
+startCronJobs();
 app.listen(PORT, () => {
     connectToDB();
     console.log(`Server is running on http://localhost:${PORT}`);

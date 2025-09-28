@@ -18,7 +18,10 @@ export const registerCustomerController = async (req, res) => {
             gender,
             address
         } = req.body;
-        const profileImage = req.file?.path || null;
+        const profileImage = req.file.path ? req.file.path.replace(/\\/g, "/").split("KYC/")[1]
+            ? "/KYC/" + req.file.path.replace(/\\/g, "/").split("KYC/")[1]
+            : null
+            : null;
 
         let parsedAddress = [];
         if(address){

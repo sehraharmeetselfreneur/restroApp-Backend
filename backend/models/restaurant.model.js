@@ -3,31 +3,25 @@ import bcrypt from "bcryptjs";
 import jwt from 'jsonwebtoken';
 
 const addressSchema = new mongoose.Schema({
-    street: {
-        type: String,
-        required: true
-    },
-
-    city: {
-        type: String,
-        required: true
-    },
-
-    state: {
-        type: String,
-        required: true
-    },
-
-    pincode: {
-        type: String,
-        required: true
-    },
+    street: { type: String, required: true },
+    city: { type: String, required: true },
+    state: { type: String, required: true },
+    pincode: { type: String, required: true },
 
     geoLocation: {
-      lat: { type: Number },
-      lng: { type: Number },
+        type: {
+            type: String,
+            enum: ["Point"],
+            default: "Point",
+        },
+
+        coordinates: {
+            type: [Number],
+            required: true,
+        }
     }
 });
+addressSchema.index({ geoLocation: "2dsphere" });
 
 const documentSchema = new mongoose.Schema({
     fssaiLicense: { type: String },
@@ -52,6 +46,8 @@ const restaurantSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+
+    bannerImage: { type: String },
 
     bankDetails: {
         type: mongoose.Schema.Types.ObjectId,
@@ -83,6 +79,13 @@ const restaurantSchema = new mongoose.Schema({
         {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Orders"
+        }
+    ],
+
+    offers: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Offers"
         }
     ],
 
@@ -139,6 +142,11 @@ const restaurantSchema = new mongoose.Schema({
     },
 
     isVerified: {
+        type: Boolean,
+        default: false
+    },
+
+    isTrending: {
         type: Boolean,
         default: false
     },
