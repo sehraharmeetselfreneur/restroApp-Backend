@@ -32,7 +32,7 @@ export const registerAdminController = async (req, res) => {
 
         const existingAdmin = await adminModel.findOne({ $or: [{ email: email }, { phone: phone }] });
         if(existingAdmin){
-            return res.status(400).json({ success: false, message: "Admin doesn't exist" });
+            return res.status(400).json({ success: false, message: "Admin already exist" });
         }
 
         const hashedPassword = await adminModel.hashPassword(password);
@@ -46,7 +46,12 @@ export const registerAdminController = async (req, res) => {
             profileImage: profileImage
         });
 
-        const newAdminAnalytics = await adminAnalyticsModel.create();
+        const newAdminAnalytics = await adminAnalyticsModel.create({
+            totalUsers: 0,
+            totalOrders: 0,
+            totalRestaurants: 0,
+            totalRevenue: 0,
+        });
         const newActivityLog = await activityLogModel.create({
             userId: newAdmin._id,
             userType: "Admin",

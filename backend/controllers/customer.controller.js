@@ -199,7 +199,7 @@ export const getCustomerProfileController = async (req, res) => {
             return res.status(404).json({ success: false, message: "Customer not found" });
         }
 
-        const cart = await cartModel.findOne({ userId: customer._id });
+        const cart = await cartModel.findOne({ userId: customer._id }).populate("items.foodItemId");
         const loyaltyPoints = await loyaltyPointsModel.findOne({ userId: customer._id });
 
         res.status(200).json({

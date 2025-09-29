@@ -16,6 +16,7 @@ import { errorHandler } from './middlewares/errorHandler.middleware.js';
 import adminRoutes from './routes/admin.routes.js';
 import restaurantRoutes from './routes/restaurant.routes.js';
 import customerRoutes from './routes/customer.routes.js';
+import cartRoutes from './routes/cart.routes.js';
 import homeRoutes from './routes/home.routes.js';
 import reviewRoutes from './routes/review.routes.js';
 
@@ -39,6 +40,7 @@ app.use(cookieParser());
 app.use('/api/admin', adminRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/customer', customerRoutes);
+app.use('/api/cart', cartRoutes);
 app.use('/api/home', homeRoutes);
 app.use('/reviews', reviewRoutes);
 
