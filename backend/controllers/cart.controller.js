@@ -174,3 +174,105 @@ export const removeFromCartController = async (req, res) => {
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }
+
+export const removeFoodItemFromCartController = async (req, res) => {
+    try{
+        const userId = req.user?._id;
+        const { foodItemId, variantId } = req.body;
+
+        const customer = await customerModel.findById(userId);
+        if(!customer){
+            return res.status(404).json({ success: false, message: "Customer not found" });
+        }
+
+        let cart = await cartModel.findOne({ userId: userId }).populate("items.foodItemId");
+        if(!cart){
+            return res.status(404).json({ success: false, message: "Cart not found" });
+        }
+
+        console.log("Items before filter:", cart.items.length);
+        // Filter out the item to be removed
+        cart.items = cart.items.filter(item => {
+            const foodMatches = item.foodItemId._id.toString() === foodItemId;
+            const variantMatches = variantId ? item.variantId?.toString() === variantId.toString() : !item.variantId;
+            return !(foodMatches && variantMatches);
+        });
+        console.log("Items after filter:", cart.items.length);
+
+        // Recalculate total amount
+        cart.totalAmount = cart.items.reduce((total, item) => {
+            const itemPrice = item.foodItemId.discount_price || item.foodItemId.price;
+            const addonsPrice = item.addons?.reduce((sum, addon) => sum + (addon.price || 0), 0) || 0;
+            return total + ((itemPrice + addonsPrice) * item.quantity);
+        }, 0);
+
+        await cart.save();
+
+        const newActivityLog = await activityLogModel.create({
+            userId: userId,
+            userType: "Customer",
+            action: "removed_from_cart",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Customer ${customer.customerName} removed a foodItem from their cart`
+            }
+        });
+
+        createBackup("customers", customer.customerName, "cart", cart.toObject());
+        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+
+        return res.status(200).json({ 
+            success: true, 
+            message: "Food item removed from cart",
+            cart: cart // Send back updated cart
+        });
+    }
+    catch(err){
+        console.log("Error in removeFoodItemFromCartController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const clearCartController = async (req, res) => {
+    try{
+        const userId = req.user?._id;
+        if(!userId){
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+
+        const customer = await customerModel.findById(userId);
+        if(!customer){
+            return res.status(404).json({ success: false, message: "Customer not found" });
+        }
+
+        const cart = await cartModel.findOne({ userId: userId });
+        if(!cart){
+            return res.status(404).json({ success: true, message: "Cart not found" });
+        }
+
+        cart.items = [];
+        cart.totalAmount = 0;
+        await cart.save();
+
+        const newActivityLog = await activityLogModel.create({
+            userId: userId,
+            userType: "Customer",
+            action: "cleared_cart",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Customer ${customer.customerName} cleared their cart`
+            }
+        });
+
+        createBackup("customers", customer.customerName, "cart", cart.toObject());
+        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+
+        res.status(200).json({ success: true, message: "Cart cleared successfully" });
+    }
+    catch(err){
+        console.log("Error in clearCartController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}

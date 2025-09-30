@@ -29,6 +29,7 @@ const activityLogsSchema = new mongoose.Schema({
             "viewed_food_item",
             "added_to_cart",
             "removed_from_cart",
+            "cleared_cart",
             "placed_order",
             "cancelled_order",
             "updated_profile",
