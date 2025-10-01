@@ -6,7 +6,7 @@ import { authMiddleware } from '../middlewares/auth.middleware.js';
 import { roleMiddleware } from '../middlewares/role.middleware.js';
 
 //Controllers
-import { getCustomerProfileController, loginCustomerController, logoutCustomerController, registerCustomerController } from '../controllers/customer.controller.js';
+import { addAddressController, deleteAddressController, getCustomerProfileController, loginCustomerController, logoutCustomerController, registerCustomerController, updateAddressController } from '../controllers/customer.controller.js';
 import { generateOtpController, verifyOtpController } from '../controllers/otp.controller.js';
 
 const router = express.Router();
@@ -23,9 +23,9 @@ router.get('/profile', authMiddleware, roleMiddleware(["Customer"]), getCustomer
 router.put('/profile', authMiddleware, roleMiddleware(["Customer"]));
 
 //Address routes
-router.post('/address', authMiddleware, roleMiddleware(["Customer"]));
-router.get('/address', authMiddleware, roleMiddleware(["Customer"]));
-router.delete('/address/:id', authMiddleware, roleMiddleware(["Customer"]));
+router.post('/address', authMiddleware, roleMiddleware(["Customer"]), addAddressController);
+router.put('/address/:tag', authMiddleware, roleMiddleware(["Customer"]), updateAddressController);
+router.post('/address/:tag', authMiddleware, roleMiddleware(["Customer"]), deleteAddressController);
 
 //Orders routes
 router.get('/orders', authMiddleware, roleMiddleware(["Customer"]));

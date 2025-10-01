@@ -43,8 +43,8 @@ const paymentSchema = new mongoose.Schema({
 
     method: {
         type: String,
-        enum: ["UPI"], // can be extended later: ["UPI", "Card", "NetBanking", "COD"]
-        default: "UPI"
+        enum: ["COD"], // can be extended later: ["UPI", "Card", "NetBanking", "COD"]
+        default: "COD"
     }
 }, { timestamps: true });
 

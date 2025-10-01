@@ -31,8 +31,12 @@ const addressSchema = new mongoose.Schema({
 
     tag: {
         type: String,
-        enum: ["Home", "Work", "Other"],
         default: "Home"
+    },
+
+    isDefault: {
+        type: Boolean,
+        default: false
     },
 
     geoLocation: {

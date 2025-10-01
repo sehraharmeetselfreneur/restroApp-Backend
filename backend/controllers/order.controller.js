@@ -1,4 +1,99 @@
+import activityLogModel from "../models/activityLogs.model";
+import cartModel from "../models/cart.model";
+import customerModel from "../models/customer.model";
 import orderModel from "../models/orders.model";
+import { createBackup } from "../services/backup.service";
+
+export const createOrderController = async (req, res) => {
+    try{
+        const userId = req.user?._id;
+        const {
+            restaurantId,
+            deliveryAddress,
+            special_instructions,
+            paymentType,
+            deliveryFee = 0,
+            discountApplied = 0
+        } = req.body;
+
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+
+        const customer = await customerModel.findById(userId);
+        if (!customer) {
+            return res.status(404).json({ success: false, message: "Customer not found" });
+        }
+
+        let cart = await cartModel.findOne({ userId: userId }).populate("items.foodItemId");
+        if (!cart || cart.items.length === 0) {
+            return res.status(400).json({ success: false, message: "Cart is empty" });
+        }
+
+        const orderItems = cart.items.map(item => {
+            const basePrice = item.foodItemId.price || 0;
+            let price = basePrice;
+
+            if (item.variantId) {
+                const variant = (item.foodItemId.variants || []).find(v => String(v._id) === String(item.variantId));
+                if(variant)price = variant.price;
+            }
+
+            const addonsTotal = (item.addons || []).reduce((sum, addon) => sum + (addon.price || 0), 0);
+            const finalPrice = price + addonsTotal;
+
+            return {
+                foodItem: item.foodItemId._id,
+                variant: item.variantId ? String(item.variantId) : null,
+                quantity: item.quantity,
+                price: finalPrice,
+                subtotal: finalPrice * item.quantity,
+            };
+        });
+
+        const totalAmount = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
+        const finalAmount = totalAmount + deliveryFee - discountApplied;
+
+        const newOrder = await orderModel.create({
+            customer_id: userId,
+            restaurant_id: restaurantId,
+            items: orderItems,
+            special_instructions: special_instructions,
+            paymentStatus: "pending",
+            paymentType: paymentType,
+            totalAmount: totalAmount,
+            deliveryFee: deliveryFee,
+            discountApplied: discountApplied,
+            finalAmount,
+            deliveryAddress: JSON.parse(deliveryAddress)
+        });
+
+        cart.items = [];
+        cart.totalAmount = 0;
+        await cart.save();
+
+        const newActivityLog = await activityLogModel.create({
+            userId: userId,
+            userType: "Customer",
+            action : "placed_order",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Customer ${customer.customerName} placed an order worth ₹${finalAmount}`,
+                orderId: newOrder._id,
+            }
+        });
+
+        createBackup("customers", customer.customerName, "orders", newOrder.toObject());
+        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+
+        res.status(201).json({ success: true, message: "Order placed successfully" });
+    }
+    catch(err){
+        console.log("Error in createOrderController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
 
 export const updateOrderStatus = async (req, res) => {
     try{

@@ -71,6 +71,12 @@ const ordersSchema = new mongoose.Schema({
         enum: ["pending", "paid", "refunded"],
         default: "pending",
     },
+
+    paymentType: {
+        type: String,
+        enum: ["COD"],
+        default: "COD"
+    },
     
     totalAmount: {
         type: Number,
