@@ -19,6 +19,7 @@ import customerRoutes from './routes/customer.routes.js';
 import cartRoutes from './routes/cart.routes.js';
 import homeRoutes from './routes/home.routes.js';
 import reviewRoutes from './routes/review.routes.js';
+import orderRoutes from './routes/order.routes.js';
 
 import { startCronJobs } from './utils/cronJobs.js';
 
@@ -42,6 +43,7 @@ app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/customer', customerRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/home', homeRoutes);
+app.use('/api/order', orderRoutes);
 app.use('/reviews', reviewRoutes);
 
 app.use("/kyc", express.static(path.join(process.cwd(), "KYC")));

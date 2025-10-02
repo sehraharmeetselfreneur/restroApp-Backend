@@ -6,8 +6,18 @@ import { roleMiddleware } from '../middlewares/role.middleware.js';
 import { upload } from '../middlewares/file.middleware.js';
 
 //Controllers
-import { addFoodItemController, addMenuCategoryController, deleteFoodItemController, getRestaurantProfileController, loginRestaurantController, logoutRestaurantController, registerRestaurantController, updateFoodItemController } from '../controllers/restaurant.controller.js';
 import { generateOtpController, verifyOtpController } from '../controllers/otp.controller.js';
+import {
+    addFoodItemController,
+    addMenuCategoryController,
+    deleteFoodItemController,
+    getRestaurantProfileController,
+    loginRestaurantController,
+    logoutRestaurantController,
+    registerRestaurantController,
+    updateFoodItemController,
+    updateRestaurantAvailabilityController
+} from '../controllers/restaurant.controller.js';
 
 const router = express.Router();
 
@@ -23,10 +33,10 @@ router.post('/logout', authMiddleware, roleMiddleware(["Restaurant"]), logoutRes
 //Profile routes
 router.get('/profile', authMiddleware, roleMiddleware(["Restaurant"]), getRestaurantProfileController);
 router.put('/profile', authMiddleware, roleMiddleware(["Restaurant"]));
+router.put('/available', authMiddleware, roleMiddleware(["Restaurant"]), updateRestaurantAvailabilityController)
 
 //Menu routes
 router.post('/menu', authMiddleware, roleMiddleware(["Restaurant"]), addMenuCategoryController);
-// router.get('/menu', authMiddleware, roleMiddleware(["Restaurant"]));  MAY NOT BE NEEDED
 router.put('/menu/:id', authMiddleware, roleMiddleware(["Restaurant"]));
 router.delete('/menu/:id', authMiddleware, roleMiddleware(["Restaurant"]));
 

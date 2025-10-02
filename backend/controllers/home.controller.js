@@ -16,7 +16,7 @@ export const getNearByRestaurantsController = async (req, res) => {
                     distanceField: "distance", // this field will contain distance in meters
                     maxDistance: maxDistance,
                     spherical: true,
-                    query: { isOpen: false } // filter on open restaurants
+                    query: { isOpen: true } // filter on open restaurants
                 }
             },
             { $limit: 20 },

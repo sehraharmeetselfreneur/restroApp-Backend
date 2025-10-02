@@ -2,6 +2,7 @@
 import activityLogModel from "../models/activityLogs.model.js";
 import foodItemModel from "../models/foodItems.model.js";
 import menuCategoryModel from "../models/menu_categories.model.js";
+import orderModel from "../models/orders.model.js";
 import restaurantModel from "../models/restaurant.model.js";
 import restaurantBankDetailsModel from "../models/restaurant_bank_details.model.js";
 import restaurantAnalyticsModel from "../models/restaurantAnalytics.model.js";
@@ -339,6 +340,7 @@ export const getRestaurantProfileController = async (req, res) => {
             });
         const restaurantBankDetails = await restaurantBankDetailsModel.findOne({ restaurant_id: restaurant._id });
         const restaurantAnalytics = await restaurantAnalyticsModel.findOne({ restaurantId: restaurant._id });
+        const orders = await orderModel.find({ restaurant_id: restaurant._id }).populate("customer_id");
 
         let decryptedRestaurant = null;
         if (restaurant) {
@@ -370,7 +372,8 @@ export const getRestaurantProfileController = async (req, res) => {
             success: true,
             profile: decryptedRestaurant,
             bankDetails: decryptedRestaurantBankDetails,
-            analytics: restaurantAnalytics
+            analytics: restaurantAnalytics,
+            orders: orders
         });
     }
     catch(err){
@@ -622,6 +625,39 @@ export const updateFoodItemController = async (req, res) => {
     }
     catch(err){
         console.log("Error in updateFoodItemController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const updateRestaurantAvailabilityController = async (req, res) => {
+    try{
+        const userId = req.user?._id;
+        const restaurant = await restaurantModel.findById(userId);
+        if(!restaurant){
+            return res.status(404).json({ success: false, message: "Restaurant not found" });
+        }
+
+        restaurant.isOpen = !restaurant.isOpen;
+        await restaurant.save();
+
+        const newActivityLog = await activityLogModel.create({
+            userId: userId,
+            userType: "Restaurant",
+            action : restaurant.isOpen ? "restaurant_opened" : "restaurant_closed",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Restaurant ${restaurant.restaurantName || "Unknown"} ${restaurant.isOpen ? "closed" : "closed"}`
+            }
+        });
+
+        createBackup("restaurants", restaurant.restaurantName, "restaurant", restaurant.toObject());
+        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());
+
+        res.status(200).json({ success: true, message: `You're ${restaurant.isOpen ? "Opened" : "Closed"} now` });
+    }
+    catch(err){
+        console.log("Error in updateRestaurantAvailabilityController: ", err.message);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }

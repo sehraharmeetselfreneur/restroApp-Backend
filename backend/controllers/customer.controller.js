@@ -3,6 +3,7 @@ import activityLogModel from "../models/activityLogs.model.js";
 import cartModel from "../models/cart.model.js";
 import customerModel from "../models/customer.model.js";
 import loyaltyPointsModel from "../models/loyaltyPoints.model.js";
+import orderModel from "../models/orders.model.js";
 
 //Required services
 import { createBackup } from "../services/backup.service.js";
@@ -201,18 +202,66 @@ export const getCustomerProfileController = async (req, res) => {
             return res.status(404).json({ success: false, message: "Customer not found" });
         }
 
+        const orders = await orderModel.find({ customer_id: customer._id }).populate("restaurant_id items.foodItem");
         const cart = await cartModel.findOne({ userId: customer._id }).populate("items.foodItemId");
         const loyaltyPoints = await loyaltyPointsModel.findOne({ userId: customer._id });
 
         res.status(200).json({
             success: true,
             profile: customer,
+            orders: orders,
             cart: cart,
             loyaltyPoints: loyaltyPoints
         });
     }
     catch(err){
         console.log("Error in getCustomerProfileController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const updateCustomerProfileController = async (req, res) => {
+    try{
+        const userId = req.user?._id;
+        const { fullName, email, phone } = req.body
+
+        if(!fullName || !email || !phone){
+            return res.status(400).json({ success: false, message: "All fields are required" });
+        }
+
+        const customer = await customerModel.findById(userId);
+        if(!customer){
+            return res.status(404).json({ success: false, message: "Customer not found" });
+        }
+
+        const existingCustomerWithSameEmailOrPhone = await customerModel.findOne({ _id: { $ne: userId }, $or: [{ email: email }, { phone: phone }] });
+        if(existingCustomerWithSameEmailOrPhone){
+            return res.status(400).json({ success: false, message: "User with same email or phone already exists" });
+        }
+
+        customer.customerName = fullName;
+        customer.email = email;
+        customer.phone = phone;
+        await customer.save();
+
+        const newActivityLog = await activityLogModel.create({
+            userId: userId,
+            userType: "Customer",
+            action: "updated_profile",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Customer ${customer.customerName} updated their profile}`,
+            }
+        });
+
+        createBackup("customers", customer.customerName, "customer", customer.toObject());
+        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+
+        res.status(200).json({ success: true, message: "Profile updated successfully!" });
+    }
+    catch(err){
+        console.log("Error in updateCustomerProfileController: ", err.message);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }

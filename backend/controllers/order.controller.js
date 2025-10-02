@@ -1,20 +1,25 @@
-import activityLogModel from "../models/activityLogs.model";
-import cartModel from "../models/cart.model";
-import customerModel from "../models/customer.model";
-import orderModel from "../models/orders.model";
-import { createBackup } from "../services/backup.service";
+import haversine from "haversine-distance";
+
+import activityLogModel from "../models/activityLogs.model.js";
+import cartModel from "../models/cart.model.js";
+import customerModel from "../models/customer.model.js";
+import orderModel from "../models/orders.model.js";
+import restaurantModel from "../models/restaurant.model.js";
+import { createBackup } from "../services/backup.service.js";
 
 export const createOrderController = async (req, res) => {
     try{
         const userId = req.user?._id;
         const {
-            restaurantId,
+            restaurant_id,
             deliveryAddress,
             special_instructions,
             paymentType,
             deliveryFee = 0,
             discountApplied = 0
-        } = req.body;
+        } = req.body.orderData;
+
+        console.log(req.body.orderData);
 
         if (!userId) {
             return res.status(401).json({ success: false, message: "Unauthorized" });
@@ -25,10 +30,27 @@ export const createOrderController = async (req, res) => {
             return res.status(404).json({ success: false, message: "Customer not found" });
         }
 
+        const restaurant = await restaurantModel.findById(restaurant_id);
+        if(!restaurant){
+            return res.status(404).json({ success: false, message: "Restaurant not found" });
+        }
+
         let cart = await cartModel.findOne({ userId: userId }).populate("items.foodItemId");
         if (!cart || cart.items.length === 0) {
             return res.status(400).json({ success: false, message: "Cart is empty" });
         }
+
+        const restaurantCoords = {
+            latitude: restaurant.address.geoLocation.coordinates[1],
+            longitude: restaurant.address.geoLocation.coordinates[0]
+        };
+        const customerCoords = {
+            latitude: deliveryAddress.coordinates[1],
+            longitude: deliveryAddress.coordinates[0]
+        };
+
+        const distanceInMeters = haversine(customerCoords, restaurantCoords);
+        const distanceInKm = (distanceInMeters / 1000).toFixed(2);
 
         const orderItems = cart.items.map(item => {
             const basePrice = item.foodItemId.price || 0;
@@ -56,7 +78,7 @@ export const createOrderController = async (req, res) => {
 
         const newOrder = await orderModel.create({
             customer_id: userId,
-            restaurant_id: restaurantId,
+            restaurant_id: restaurant_id,
             items: orderItems,
             special_instructions: special_instructions,
             paymentStatus: "pending",
@@ -65,12 +87,17 @@ export const createOrderController = async (req, res) => {
             deliveryFee: deliveryFee,
             discountApplied: discountApplied,
             finalAmount,
-            deliveryAddress: JSON.parse(deliveryAddress)
+            deliveryAddress: deliveryAddress,
+            distance: distanceInKm
         });
 
+        customer.orders.push(newOrder._id);
+        restaurant.orders.push(newOrder._id);
         cart.items = [];
         cart.totalAmount = 0;
         await cart.save();
+        await restaurant.save();
+        await customer.save();
 
         const newActivityLog = await activityLogModel.create({
             userId: userId,
@@ -90,7 +117,7 @@ export const createOrderController = async (req, res) => {
         res.status(201).json({ success: true, message: "Order placed successfully" });
     }
     catch(err){
-        console.log("Error in createOrderController: ", err.message);
+        console.log("Error in createOrderController: ", err);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }
