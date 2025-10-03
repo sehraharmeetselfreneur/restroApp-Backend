@@ -4,6 +4,7 @@ import cartModel from "../models/cart.model.js";
 import customerModel from "../models/customer.model.js";
 import loyaltyPointsModel from "../models/loyaltyPoints.model.js";
 import orderModel from "../models/orders.model.js";
+import restaurantModel from "../models/restaurant.model.js";
 
 //Required services
 import { createBackup } from "../services/backup.service.js";
@@ -205,12 +206,14 @@ export const getCustomerProfileController = async (req, res) => {
         const orders = await orderModel.find({ customer_id: customer._id }).populate("restaurant_id items.foodItem");
         const cart = await cartModel.findOne({ userId: customer._id }).populate("items.foodItemId");
         const loyaltyPoints = await loyaltyPointsModel.findOne({ userId: customer._id });
+        const favourites = await customerModel.findById(req.user?._id).populate("favourites").select("favourites");
 
         res.status(200).json({
             success: true,
             profile: customer,
             orders: orders,
             cart: cart,
+            favourites: favourites,
             loyaltyPoints: loyaltyPoints
         });
     }
@@ -409,6 +412,73 @@ export const deleteAddressController = async (req, res) => {
     }
     catch(err){
         console.log("Error in deleteAddressController: ", err.message);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+export const addToFavouritesController = async (req, res) => {
+    try{
+        const userId = req.user?._id;
+        const { id } = req.params;
+        if (!userId) {
+            return res.status(401).json({ success: false, message: "Unauthorized" });
+        }
+        if (!id) {
+            return res.status(400).json({ success: false, message: "Restaurant ID is required" });
+        }
+
+        const customer = await customerModel.findById(userId);
+        if(!customer){
+            return res.status(404).json({ success: false, message: "Customer not found" });
+        }
+
+        const restaurant = await restaurantModel.findById(id);
+        if(!restaurant){
+            return res.status(404).json({ success: false, message: "Restaurant not found" });
+        }
+
+        if(customer.favourites.includes(restaurant._id)){
+            customer.favourites = customer.favourites.filter(favId => favId.toString() !== restaurant._id.toString() );
+            await customer.save();
+
+            const newActivityLog = await activityLogModel.create({
+                userId: userId,
+                userType: "Customer",
+                action: "removed_from_favourites",
+                metadata: {
+                    ip: req.ip,
+                    userAgent: req.headers["user-agent"],
+                    message: `Customer ${customer.customerName} removed ${restaurant.restaurantName} from favourites`,
+                }
+            });
+
+            createBackup("customers", customer.customerName, "customer", customer.toObject());
+            createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+
+            return res.status(200).json({ success: true, message: "Removed from favourites" });
+        }
+
+        customer.favourites.push(restaurant._id);
+        await customer.save();
+
+        const newActivityLog = await activityLogModel.create({
+            userId: userId,
+            userType: "Customer",
+            action: "added_to_favourites",
+            metadata: {
+                ip: req.ip,
+                userAgent: req.headers["user-agent"],
+                message: `Customer ${customer.customerName} added ${restaurant.restaurantName} to favourites`,
+            }
+        });
+
+        createBackup("customers", customer.customerName, "customer", customer.toObject());
+        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+
+        res.status(200).json({ success: true, message: "Added to favourites!" });
+    }
+    catch(err){
+        console.log("Error in addToFavouritesController: ", err.message);
         res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }

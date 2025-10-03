@@ -24,6 +24,8 @@ const activityLogsSchema = new mongoose.Schema({
             "added_new_address",
             "deleted_address",
             "viewed_restaurant",
+            "removed_from_favourites",
+            "added_to_favourites",
             "added_menu_category",
             "added_food_item",
             "updated_food_item",

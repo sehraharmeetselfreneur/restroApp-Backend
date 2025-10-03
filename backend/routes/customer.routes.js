@@ -9,6 +9,7 @@ import { roleMiddleware } from '../middlewares/role.middleware.js';
 import { generateOtpController, verifyOtpController } from '../controllers/otp.controller.js';
 import {
     addAddressController,
+    addToFavouritesController,
     deleteAddressController,
     getCustomerProfileController,
     loginCustomerController,
@@ -35,5 +36,8 @@ router.put('/profile', authMiddleware, roleMiddleware(["Customer"]), updateCusto
 router.post('/address', authMiddleware, roleMiddleware(["Customer"]), addAddressController);
 router.put('/address/:tag', authMiddleware, roleMiddleware(["Customer"]), updateAddressController);
 router.post('/address/:tag', authMiddleware, roleMiddleware(["Customer"]), deleteAddressController);
+
+//Favourites Routes
+router.post('/favourites/:id', authMiddleware, roleMiddleware(["Customer"]), addToFavouritesController);
 
 export default router;
