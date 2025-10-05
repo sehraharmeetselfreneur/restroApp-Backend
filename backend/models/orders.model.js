@@ -41,6 +41,12 @@ const ordersSchema = new mongoose.Schema({
         required: true,
     },
 
+    payment_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Payments",
+        required: true
+    },
+
     orderStatus: {
         type: String,
         enum: [
@@ -68,7 +74,7 @@ const ordersSchema = new mongoose.Schema({
 
     paymentStatus: {
         type: String,
-        enum: ["pending", "paid", "refunded"],
+        enum: ["pending", "paid", "refunded", "failed"],
         default: "pending",
     },
 

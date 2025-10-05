@@ -3,19 +3,19 @@ import mongoose from "mongoose";
 const paymentSchema = new mongoose.Schema({
     orderId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Order",
+        ref: "Orders",
         required: true
     },
 
     customerId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "Customers",
         required: true
     },
 
     restaurantId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Restaurant",
+        ref: "Restaurants",
         required: true
     },
 
@@ -30,6 +30,14 @@ const paymentSchema = new mongoose.Schema({
         unique: true
     },
 
+    razorpayOrderId: {
+      type: String
+    },
+
+    razorpaySignature: {
+      type: String
+    },
+
     amount: {
         type: Number,
         required: true
@@ -37,15 +45,24 @@ const paymentSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ["success", "failed", "refunded"],
+        enum: ["pending", "success", "failed", "refunded"],
         default: "success"
     },
 
     method: {
         type: String,
-        enum: ["COD"], // can be extended later: ["UPI", "Card", "NetBanking", "COD"]
+        enum: ["UPI", "Card", "NetBanking", "COD"],
         default: "COD"
-    }
+    },
+
+    upiApp: {
+      type: String,
+      enum: ["Google Pay", "PhonePe", "Paytm", "BHIM", "Other"]
+    },
+
+    paymentDetails: {
+      type: Object
+    },
 }, { timestamps: true });
 
 const paymentModel = mongoose.model('Payments', paymentSchema);
