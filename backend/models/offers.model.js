@@ -3,18 +3,20 @@ import mongoose from 'mongoose';
 const offerSchema = new mongoose.Schema({
     restaurant: { 
       type: mongoose.Schema.Types.ObjectId, 
-      ref: "Restaurant", 
+      ref: "Restaurants", 
       required: true 
     },
 
     foodItems: [
-      { type: mongoose.Schema.Types.ObjectId, ref: "FoodItem" }
+      { type: mongoose.Schema.Types.ObjectId, ref: "FoodItems" }
     ],
 
-    menuCategory: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "MenuCategory"
-    },
+    menuCategory: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "MenuCategorys"
+        }
+    ],
 
     title: { type: String, required: true },
 

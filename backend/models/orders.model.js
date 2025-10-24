@@ -43,8 +43,7 @@ const ordersSchema = new mongoose.Schema({
 
     payment_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Payments",
-        required: true
+        ref: "Payments"
     },
 
     orderStatus: {
@@ -108,13 +107,17 @@ const ordersSchema = new mongoose.Schema({
         type: Number
     },
 
+    preparationTime: {
+        type: Number
+    },
+
     deliveryAddress: {
         street: { type: String, required: true },
         city: { type: String, required: true },
         state: { type: String, required: true },
         pincode: { type: String, required: true },
         landmark: { type: String },
-    },
+    }
 }, { timestamps: true });
 
 const orderModel = mongoose.model("Orders", ordersSchema);

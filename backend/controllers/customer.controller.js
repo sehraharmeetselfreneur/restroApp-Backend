@@ -144,7 +144,7 @@ export const loginCustomerController = async (req, res) => {
             }
         });
 
-        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+        createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({
             success: true,
@@ -186,7 +186,7 @@ export const logoutCustomerController = async (req, res) => {
             },
         });
 
-        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+        createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({ success: true, message: "Customer logged out successfully" });
     }
@@ -203,7 +203,7 @@ export const getCustomerProfileController = async (req, res) => {
             return res.status(404).json({ success: false, message: "Customer not found" });
         }
 
-        const orders = await orderModel.find({ customer_id: customer._id }).populate("restaurant_id items.foodItem");
+        const orders = await orderModel.find({ customer_id: customer._id }).populate("restaurant_id items.foodItem").sort({ createdAt: -1 });
         const cart = await cartModel.findOne({ userId: customer._id }).populate("items.foodItemId");
         const loyaltyPoints = await loyaltyPointsModel.findOne({ userId: customer._id });
         const favourites = await customerModel.findById(req.user?._id).populate("favourites").select("favourites");
@@ -258,8 +258,8 @@ export const updateCustomerProfileController = async (req, res) => {
             }
         });
 
-        createBackup("customers", customer.customerName, "customer", customer.toObject());
-        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+        createBackup("customers", customer.email, "customer", customer.toObject());
+        createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({ success: true, message: "Profile updated successfully!" });
     }
@@ -316,8 +316,8 @@ export const addAddressController = async (req, res) => {
             }
         });
 
-        createBackup("customers", customer.customerName, "customer", customer.toObject());
-        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+        createBackup("customers", customer.email, "customer", customer.toObject());
+        createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
 
         res.status(201).json({ success: true, message: "New Address added!" });
     }
@@ -405,8 +405,8 @@ export const deleteAddressController = async (req, res) => {
             }
         });
 
-        createBackup("customers", customer.customerName, "customer", customer.toObject());
-        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+        createBackup("customers", customer.email, "customer", customer.toObject());
+        createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({ success: true, message: `${tag} deleted successfully!` });
     }
@@ -452,8 +452,8 @@ export const addToFavouritesController = async (req, res) => {
                 }
             });
 
-            createBackup("customers", customer.customerName, "customer", customer.toObject());
-            createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+            createBackup("customers", customer.email, "customer", customer.toObject());
+            createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
 
             return res.status(200).json({ success: true, message: "Removed from favourites" });
         }
@@ -472,8 +472,8 @@ export const addToFavouritesController = async (req, res) => {
             }
         });
 
-        createBackup("customers", customer.customerName, "customer", customer.toObject());
-        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+        createBackup("customers", customer.email, "customer", customer.toObject());
+        createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({ success: true, message: "Added to favourites!" });
     }

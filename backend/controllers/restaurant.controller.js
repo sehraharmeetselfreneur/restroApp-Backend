@@ -308,7 +308,7 @@ export const logoutRestaurantController = async (req, res) => {
             },
         });
 
-        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());   //Backup for activityLogsModel
+        createBackup("restaurants", restaurant.email, "activityLogs", newActivityLog.toObject());   //Backup for activityLogsModel
 
         res.status(200).json({ success: true, message: "Restaurant Logged out successfully" });
     }
@@ -340,7 +340,18 @@ export const getRestaurantProfileController = async (req, res) => {
             });
         const restaurantBankDetails = await restaurantBankDetailsModel.findOne({ restaurant_id: restaurant._id });
         const restaurantAnalytics = await restaurantAnalyticsModel.findOne({ restaurantId: restaurant._id });
-        const orders = await orderModel.find({ restaurant_id: restaurant._id }).populate("customer_id");
+        const orders = await orderModel
+        .find({ restaurant_id: restaurant._id })
+        .populate("customer_id")
+        .populate({
+            path: "items.foodItem",
+            model: "FoodItems",
+            populate: {
+                path: "category_id", // optional: if you want the food category inside foodItem
+                model: "MenuCategory"
+            }
+        })
+        .sort({ createdAt: -1 });
 
         let decryptedRestaurant = null;
         if (restaurant) {
@@ -421,8 +432,8 @@ export const addMenuCategoryController = async (req, res) => {
         restaurant.menu.push(newCategory._id);
         await restaurant.save();
 
-        createBackup("restaurants", restaurant.restaurantName, "menuCategory", newCategory.toObject());
-        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());
+        createBackup("restaurants", restaurant.email, "menuCategory", newCategory.toObject());
+        createBackup("restaurants", restaurant.email, "activityLogs", newActivityLog.toObject());
 
         res.status(201).json({
             success: true,
@@ -499,8 +510,8 @@ export const addFoodItemController = async (req, res) => {
             }
         });
 
-        createBackup("restaurants", restaurant.restaurantName, "foodItems", newFoodItem.toObject());
-        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());
+        createBackup("restaurants", restaurant.email, "foodItems", newFoodItem.toObject());
+        createBackup("restaurants", restaurant.email, "activityLogs", newActivityLog.toObject());
 
         res.status(201).json({
             success: true,
@@ -532,8 +543,8 @@ export const deleteFoodItemController = async (req, res) => {
             }
         });
 
-        createBackup("restaurants", restaurant.restaurantName, "restaurant", restaurant.toObject());
-        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());
+        createBackup("restaurants", restaurant.email, "restaurant", restaurant.toObject());
+        createBackup("restaurants", restaurant.email, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({
             success: true,
@@ -614,8 +625,8 @@ export const updateFoodItemController = async (req, res) => {
             }
         });
 
-        createBackup("restaurants", restaurant.restaurantName, "foodItems", foodItem.toObject());
-        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());
+        createBackup("restaurants", restaurant.email, "foodItems", foodItem.toObject());
+        createBackup("restaurants", restaurant.email, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({
             success: true,
@@ -651,8 +662,8 @@ export const updateRestaurantAvailabilityController = async (req, res) => {
             }
         });
 
-        createBackup("restaurants", restaurant.restaurantName, "restaurant", restaurant.toObject());
-        createBackup("restaurants", restaurant.restaurantName, "activityLogs", newActivityLog.toObject());
+        createBackup("restaurants", restaurant.email, "restaurant", restaurant.toObject());
+        createBackup("restaurants", restaurant.email, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({ success: true, message: `You're ${restaurant.isOpen ? "Opened" : "Closed"} now` });
     }

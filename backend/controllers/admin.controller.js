@@ -67,9 +67,9 @@ export const registerAdminController = async (req, res) => {
         await newAdmin.save();
 
         //Backups
-        createBackup("admins", newAdmin.adminName, "admin", newAdmin.toObject());
-        createBackup("admins", newAdmin.adminName, "adminAnalytics", newAdminAnalytics.toObject());
-        createBackup("admins", newAdmin.adminName, "activityLogs", newActivityLog.toObject());
+        createBackup("admins", newAdmin.email, "admin", newAdmin.toObject());
+        createBackup("admins", newAdmin.email, "adminAnalytics", newAdminAnalytics.toObject());
+        createBackup("admins", newAdmin.email, "activityLogs", newActivityLog.toObject());
 
         const token = newAdmin.generateAuthToken();
         res.cookie("jwt", token, {

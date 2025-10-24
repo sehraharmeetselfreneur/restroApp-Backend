@@ -81,8 +81,8 @@ export const addToCartController = async (req, res) => {
             }
         });
 
-        createBackup("customers", customer.customerName, "cart", cart.toObject());
-        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+        createBackup("customers", customer.email, "cart", cart.toObject());
+        createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({ success: true, message: "Item added to cart" });
     }
@@ -161,8 +161,8 @@ export const removeFromCartController = async (req, res) => {
             }
         });
 
-        createBackup("customers", customer.customerName, "cart", cart.toObject());
-        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+        createBackup("customers", customer.email, "cart", cart.toObject());
+        createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({
             success: true,
@@ -219,8 +219,8 @@ export const removeFoodItemFromCartController = async (req, res) => {
             }
         });
 
-        createBackup("customers", customer.customerName, "cart", cart.toObject());
-        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+        createBackup("customers", customer.email, "cart", cart.toObject());
+        createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
 
         return res.status(200).json({ 
             success: true, 
@@ -266,8 +266,8 @@ export const clearCartController = async (req, res) => {
             }
         });
 
-        createBackup("customers", customer.customerName, "cart", cart.toObject());
-        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
+        createBackup("customers", customer.email, "cart", cart.toObject());
+        createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
 
         res.status(200).json({ success: true, message: "Cart cleared successfully" });
     }

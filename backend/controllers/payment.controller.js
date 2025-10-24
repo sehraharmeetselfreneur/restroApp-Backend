@@ -40,8 +40,8 @@ export const createPaymentController = async (req, res) => {
             order.payment_id = codPayment._id;
             await order.save();
 
-            createBackup("customers", customer.customerName, "orders", order.toObject());
-            createBackup("customers", customer.customerName, "payments", codPayment.toObject());
+            createBackup("customers", customer.email, "orders", order.toObject());
+            createBackup("customers", customer.email, "payments", codPayment.toObject());
 
             return res.status(200).json({
                 success: true,
@@ -69,7 +69,7 @@ export const createPaymentController = async (req, res) => {
             method: method
         });
 
-        createBackup("customers", customer.customerName, "payments", newPayment.toObject());
+        createBackup("customers", customer.email, "payments", newPayment.toObject());
 
         res.status(200).json({ success: true, message: "Payment created!" });
     }
@@ -120,9 +120,9 @@ export const verifyPaymentController = async (req, res) => {
                 }
             });
 
-            createBackup("customers", customer.customerName, "payments", payment.toObject());
-            createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
-            createBackup("customers", customer.customerName, "orders", order.toObject());
+            createBackup("customers", customer.email, "payments", payment.toObject());
+            createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
+            createBackup("customers", customer.email, "orders", order.toObject());
 
             res.status(400).json({ success: false, message: "Payment verification failed" });
         }
@@ -148,9 +148,9 @@ export const verifyPaymentController = async (req, res) => {
             }
         });
 
-        createBackup("customers", customer.customerName, "payments", payment.toObject());
-        createBackup("customers", customer.customerName, "activityLogs", newActivityLog.toObject());
-        createBackup("customers", customer.customerName, "orders", order.toObject());
+        createBackup("customers", customer.email, "payments", payment.toObject());
+        createBackup("customers", customer.email, "activityLogs", newActivityLog.toObject());
+        createBackup("customers", customer.email, "orders", order.toObject());
 
         res.status(200).json({ success: true, message: "Payment verified" });
     }

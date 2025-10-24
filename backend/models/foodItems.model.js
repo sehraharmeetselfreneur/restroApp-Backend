@@ -73,6 +73,11 @@ const foodItemSchema = new mongoose.Schema({
 
     tags: [{ type: String }], // e.g., spicy, vegan, gluten-free
 
+    ordersCount: {
+        type: Number,
+        default: 0
+    },
+
     variants: [variantSchema], // Half / Full / Custom options
 }, { timestamps: true } );
 
