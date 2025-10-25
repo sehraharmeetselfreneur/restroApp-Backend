@@ -2,6 +2,7 @@
 import activityLogModel from "../models/activityLogs.model.js";
 import foodItemModel from "../models/foodItems.model.js";
 import menuCategoryModel from "../models/menu_categories.model.js";
+import offerModel from "../models/offers.model.js";
 import orderModel from "../models/orders.model.js";
 import restaurantModel from "../models/restaurant.model.js";
 import restaurantBankDetailsModel from "../models/restaurant_bank_details.model.js";
@@ -340,6 +341,7 @@ export const getRestaurantProfileController = async (req, res) => {
             });
         const restaurantBankDetails = await restaurantBankDetailsModel.findOne({ restaurant_id: restaurant._id });
         const restaurantAnalytics = await restaurantAnalyticsModel.findOne({ restaurantId: restaurant._id });
+        const offers = await offerModel.find({ restaurant: restaurant._id }).populate("foodItems").populate("menuCategory").sort({ createAt: -1 });
         const orders = await orderModel
         .find({ restaurant_id: restaurant._id })
         .populate("customer_id")
@@ -384,7 +386,8 @@ export const getRestaurantProfileController = async (req, res) => {
             profile: decryptedRestaurant,
             bankDetails: decryptedRestaurantBankDetails,
             analytics: restaurantAnalytics,
-            orders: orders
+            orders: orders,
+            offers: offers
         });
     }
     catch(err){

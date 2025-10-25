@@ -45,6 +45,7 @@ const activityLogsSchema = new mongoose.Schema({
             "deleted_offer",
             "activated_offer",
             "deactivated_offer",
+            "applied_offer_prices",
             "made_payment",
             "verify_restaurant",
             "reject_restaurant",

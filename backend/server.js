@@ -20,6 +20,7 @@ import cartRoutes from './routes/cart.routes.js';
 import homeRoutes from './routes/home.routes.js';
 import reviewRoutes from './routes/review.routes.js';
 import orderRoutes from './routes/order.routes.js';
+import offerRoutes from './routes/offer.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 
 import { startCronJobs } from './utils/cronJobs.js';
@@ -45,6 +46,7 @@ app.use('/api/customer', customerRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/home', homeRoutes);
 app.use('/api/order', orderRoutes);
+app.use('/api/offer', offerRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/review', reviewRoutes);
 

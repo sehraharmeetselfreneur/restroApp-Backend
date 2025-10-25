@@ -14,9 +14,15 @@ const offerSchema = new mongoose.Schema({
     menuCategory: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ref: "MenuCategorys"
+            ref: "MenuCategory"
         }
     ],
+
+    offerType: {
+        type: String,
+        enum: ["category", "item"],
+        required: true
+    },
 
     title: { type: String, required: true },
 
