@@ -7,6 +7,7 @@ import orderModel from "../models/orders.model.js";
 import restaurantModel from "../models/restaurant.model.js";
 import { createBackup } from "../services/backup.service.js";
 import paymentModel from "../models/payments.model.js";
+import foodItemModel from "../models/foodItems.model.js";
 
 export const createOrderController = async (req, res) => {
     try{
@@ -73,6 +74,16 @@ export const createOrderController = async (req, res) => {
                 subtotal: finalPrice * item.quantity,
             };
         });
+
+        await Promise.all(
+            cart.items.map(async (item) => {
+                await foodItemModel.findByIdAndUpdate(
+                    item.foodItemId._id,
+                    { $inc: { ordersCount: 1 } },
+                    { new: true }
+                );
+            })
+        );
 
         const totalAmount = orderItems.reduce((sum, item) => sum + item.subtotal, 0);
         const taxAndCharges = totalAmount * 0.05;
